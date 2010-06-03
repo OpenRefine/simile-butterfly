@@ -52,6 +52,8 @@ and <action> is one of
    build ..................... Build Butterfly      
    run ....................... Run Butterfly [default]
 
+   appengine_upload .......... Upload Butterfly to Google App Engine
+   
    test ...................... Run Butterfly tests
    
    findbugs .................. Run Findbugs against Butterfly     
@@ -149,7 +151,7 @@ tool_download() {
     FILE=$2
     DIR=$3
     
-    cd $SERVER_TOOLS_DIR
+    cd $TOOLS_DIR
         if [ ! -f "$FILE" ]; then
             download $URL $FILE
         fi
@@ -168,23 +170,32 @@ tool_download() {
 # ----------------------------------------------------------------------------------------------
 
 build_prepare() {
-    if [ ! -d $SERVER_BUILD_DIR ]; then 
-        mkdir $SERVER_BUILD_DIR || error "Error while making directory $SERVER_BUILD_DIR"
+    if [ ! -d $BUILD_DIR ]; then 
+        mkdir $BUILD_DIR || error "Error while making directory $BUILD_DIR"
     fi
 }
 
 dist_prepare() {
-    if [ ! -d $SERVER_DIST_DIR ]; then 
-        mkdir $SERVER_DIST_DIR || error "Error while making directory $SERVER_DIST_DIR"
+    if [ ! -d $DIST_DIR ]; then 
+        mkdir $DIST_DIR || error "Error while making directory $DIST_DIR"
     fi
 }
 
 tools_prepare() {
-    if [ ! -d $SERVER_TOOLS_DIR ]; then 
-        mkdir $SERVER_TOOLS_DIR || error "Error while making directory $SERVER_TOOLS_DIR"
+    if [ ! -d $TOOLS_DIR ]; then 
+        mkdir $TOOLS_DIR || error "Error while making directory $TOOLS_DIR"
     fi
 }
-            
+        
+appengine_prepare() {
+    if [ -z "$APPENGINE_HOME" ]; then
+        error "You have to have the APPENGINE_HOME environment variable set and pointing to the local installation of the Google AppEngine SDK."
+    elif [ ! -f "$APPENGINE_HOME/bin/appcfg.sh" ]; then
+        error "Environment variable APPENGINE_HOME is set to '$APPENGINE_HOME' which doesn't point to a valid Google App Engine SDK."
+    fi
+    APPENGINE="$APPENGINE_HOME/bin/appcfg.sh"
+}
+
 ant_prepare() {
     tools_prepare
 
@@ -195,7 +206,7 @@ ant_prepare() {
     ANT="`which ant 2> /dev/null`"
     if [ -z "$ANT" ]; then
         if [ -z "$ANT_HOME" ]; then
-            cd $SERVER_TOOLS_DIR
+            cd $TOOLS_DIR
                 if [ ! -f "$ANT_FILE" ]; then
                     download $ANT_URL $ANT_FILE
                 fi
@@ -210,6 +221,8 @@ ant_prepare() {
         fi
         ANT="$ANT_HOME/bin/ant"
     fi
+    
+    get_revision
 }
        
 findbugs_prepare() {
@@ -258,15 +271,15 @@ test() {
     ant build_tests
     echo ""
     
-    CLASSPATH="$SERVER_TEST_DIR/classes${SEP}$SERVER_WEBAPP/WEB-INF/classes${SEP}$SERVER_CLASSES_DIR${SEP}$SERVER_TEST_DIR/lib/*${SEP}$SERVER_LIB_DIR/*${SEP}$SERVER_WEBAPP/WEB-INF/lib/*"
+    CLASSPATH="$TEST_DIR/classes${SEP}$WEBAPP/WEB-INF/classes${SEP}$SERVER_CLASSES_DIR${SEP}$TEST_DIR/lib/*${SEP}$SERVER_LIB_DIR/*${SEP}$WEBAPP/WEB-INF/lib/*"
 
     if [ -z "$1" ]; then
-        TESTS="-excludegroups broken $SERVER_TEST_DIR/conf/tests.xml"
+        TESTS="-excludegroups broken $TEST_DIR/conf/tests.xml"
     else 
         TESTS="-testclass $1"
     fi
     
-    RUN_CMD="$JAVA -cp $CLASSPATH $OPTS org.testng.TestNG -d $SERVER_BUILD_DIR/tests -listener org.testng.reporters.DotTestListener $TESTS"
+    RUN_CMD="$JAVA -cp $CLASSPATH $OPTS org.testng.TestNG -d $BUILD_DIR/tests -listener org.testng.reporters.DotTestListener $TESTS"
     
     #echo "$RUN_CMD"
     #echo ""
@@ -312,41 +325,50 @@ run() {
         SERVER_PID="$!"
     fi
 }
+   
+appengine_upload() {
+    appengine_prepare
     
+    ANT_PARAMS="-Dappengine.sdk.dir=${APPENGINE_HOME}"
+    ant prepare_webapp_appengine
+    
+    "$APPENGINE" update "$BUILD_DIR/appengine"
+}
+
 findbugs() {
     findbugs_prepare
     
-    ANT_PARAMS="-Dfindbugs.dir=${SERVER_TOOLS_DIR}/${FINDBUGS_DIR}"
+    ANT_PARAMS="-Dfindbugs.dir=${TOOLS_DIR}/${FINDBUGS_DIR}"
     ant findbugs
     
-    open "$SERVER_BUILD_DIR/reports/findbugs.html"
+    open "$BUILD_DIR/reports/findbugs.html"
 }    
 
 pmd() {
     pmd_prepare
     
-    ANT_PARAMS="-Dpmd.dir=${SERVER_TOOLS_DIR}/${PMD_DIR}"
+    ANT_PARAMS="-Dpmd.dir=${TOOLS_DIR}/${PMD_DIR}"
     ant pmd
     
-    open "$SERVER_BUILD_DIR/reports/pmd.html"
+    open "$BUILD_DIR/reports/pmd.html"
 }    
 
 cpd() {
     pmd_prepare
     
-    ANT_PARAMS="-Dpmd.dir=${SERVER_TOOLS_DIR}/${PMD_DIR}"
+    ANT_PARAMS="-Dpmd.dir=${TOOLS_DIR}/${PMD_DIR}"
     ant cpd
 
-    open "$SERVER_BUILD_DIR/reports/cpd.txt"
+    open "$BUILD_DIR/reports/cpd.txt"
 }    
 
 jslint() {
     jslint_prepare
 
-    ANT_PARAMS="-Djslint.dir=${SERVER_TOOLS_DIR}/${JSLINT_DIR}"
+    ANT_PARAMS="-Djslint.dir=${TOOLS_DIR}/${JSLINT_DIR}"
     ant jslint
 
-    open "$SERVER_BUILD_DIR/reports/jslint.txt"
+    open "$BUILD_DIR/reports/jslint.txt"
 }
 
 whitespace() {
@@ -427,7 +449,7 @@ while [ $# -ne 0 ] ; do
     -h) usage;;
     -p) shift; SERVER_PORT="$1"; shift; continue;;
     -i) shift; SERVER_HOST="$1"; shift; continue;;
-    -w) shift; SERVER_WEBAPP="$1"; shift; continue;;
+    -w) shift; WEBAPP="$1"; shift; continue;;
     -m) shift; SERVER_MEMORY="$1"; shift; continue;;
     --debug) shift; add_option '-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n'; continue;;
     --jmx) shift; add_option '-Dcom.sun.management.jmxremote'; continue;;
@@ -466,15 +488,6 @@ if [ -z "$SERVER_HOST" ]; then
 fi
 add_option "-Dserver.host=$SERVER_HOST"
 
-if [ -z "$SERVER_WEBAPP" ]; then
-    SERVER_WEBAPP="main/webapp"
-fi
-add_option "-Dserver.webapp=$SERVER_WEBAPP"
-
-if [ -z "$SERVER_TEST_DIR" ]; then
-    SERVER_TEST_DIR="main/tests"
-fi
-
 if [ -z "$SERVER_CLASSES_DIR" ]; then
     SERVER_CLASSES_DIR="server/classes"
 fi
@@ -483,16 +496,25 @@ if [ -z "$SERVER_LIB_DIR" ]; then
     SERVER_LIB_DIR="server/lib"
 fi
 
-if [ -z "$SERVER_BUILD_DIR" ]; then
-    SERVER_BUILD_DIR="build"
+if [ -z "$WEBAPP" ]; then
+    WEBAPP="main/webapp"
+fi
+add_option "-Dserver.webapp=$WEBAPP"
+
+if [ -z "$TEST_DIR" ]; then
+    TEST_DIR="main/tests"
 fi
 
-if [ -z "$SERVER_TOOLS_DIR" ]; then
-    SERVER_TOOLS_DIR="tools"
+if [ -z "$BUILD_DIR" ]; then
+    BUILD_DIR="build"
 fi
 
-if [ -z "$SERVER_DIST_DIR" ]; then
-    SERVER_DIST_DIR="dist"
+if [ -z "$TOOLS_DIR" ]; then
+    TOOLS_DIR="tools"
+fi
+
+if [ -z "$DIST_DIR" ]; then
+    DIST_DIR="dist"
 fi
 
 # ----------- Butterfly Properties -----------------------------------
@@ -528,6 +550,7 @@ case "$ACTION" in
   pmd) pmd;;  
   cpd) cpd;;  
   jslint) jslint;;  
+  appengine_upload) appengine_upload;;
   run) run;;  
   *) usage; ;;
 esac

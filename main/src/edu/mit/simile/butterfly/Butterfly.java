@@ -152,7 +152,6 @@ public class Butterfly extends HttpServlet implements Runnable {
     transient protected Timer _timer;
     transient protected ButterflyClassLoader _classLoader;
     transient protected ButterflyScriptWatcher _scriptWatcher;
-    transient protected ButterflyJanitor _bundleJanitor;
     transient protected ServletContext _context;
     transient protected ButterflyMounter _mounter;
 
@@ -214,7 +213,6 @@ public class Butterfly extends HttpServlet implements Runnable {
 
         _development = _properties.getBoolean(DEVELOPMENT, false);
         _scriptWatcher = new ButterflyScriptWatcher();
-        _bundleJanitor = new ButterflyJanitor();
         
         String log4j = System.getProperty("butterfly.log4j");
         File logProperties = (log4j == null) ? new File(_webInfDir, "log4j.properties") : new File(log4j);
@@ -257,16 +255,19 @@ public class Butterfly extends HttpServlet implements Runnable {
             _logger.debug("> initialize script watcher");
             _timer.schedule(_scriptWatcher, developmentWatcherDelay, developmentWatcherDelay);
             _logger.debug("< initialize script watcher");
-
-            _logger.debug("> initialize bundle janitor");
-            _timer.schedule(_bundleJanitor, developmentWatcherDelay, developmentWatcherDelay);
-            _logger.debug("< initialize bundle janitor");
         }
-        
-        _logger.debug("> spawn configuration thread");
-        Thread configurationThread = new Thread(this);
-        configurationThread.start();
-        _logger.debug("< spawn configuration thread");
+
+        try {
+            _logger.debug("> spawn configuration thread");
+            Thread configurationThread = new Thread(this);
+            configurationThread.start();
+            _logger.debug("< spawn configuration thread");
+        } catch (Exception e) {
+            // for Google App Engine or other strict servlet containers that don't allow spawning threads
+            _logger.debug("> inline configuration");
+            this.run();
+            _logger.debug("< inline configuration");
+        }
         
         _logger.debug("< init");
     }
@@ -590,8 +591,6 @@ public class Butterfly extends HttpServlet implements Runnable {
         m.setMounter(_mounter);
         m.setClassLoader(_classLoader);
         m.setTimer(_timer);
-        m.setTemporaryDir(tempDir);
-        m.setBundleJanitor(_bundleJanitor);
             
         _modulesByName.put(name,m);
             

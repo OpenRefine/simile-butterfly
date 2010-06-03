@@ -26,6 +26,18 @@
         <not><isset property="dist.dir"/></not>
     </condition>
 
+    <condition property="appengine.app_id" value="simile-butterfly">
+        <not><isset property="appengine.app_id"/></not>
+    </condition>
+
+    <condition property="appengine.version" value="1">
+        <not><isset property="appengine.version"/></not>
+    </condition>
+
+    <condition property="appengine.sdk.dir" value="/opt/appengine">
+        <not><isset property="appengine.sdk.dir"/></not>
+    </condition>
+
     <property name="fullname" value="butterfly-${version}-${revision}" />
     
     <property name="main.dir" value="${basedir}/main" />
@@ -34,6 +46,8 @@
     <property name="webapp.src.dir" value="${main.dir}/src" />
     <property name="webapp.lib.dir" value="${webapp.dir}/WEB-INF/lib" />
     <property name="webapp.classes.dir" value="${webapp.dir}/WEB-INF/classes" />
+
+    <property name="appengine.dir" value="${main.dir}/appengine" />
 
     <property name="server.dir" value="${basedir}/server" />
     <property name="server.src.dir" value="${server.dir}/src" />
@@ -46,7 +60,7 @@
     <property name="tests.lib.dir" value="${tests.dir}/lib" />
     <property name="tests.src.dir" value="${tests.dir}/src" />
     <property name="tests.classes.dir" value="${tests.dir}/classes" />
-    
+
     <property name="graphics.dir" value="${basedir}/graphics" />
     <property name="conf.dir" value="${basedir}/conf" />
     <property name="tools.dir" value="${basedir}/tools" />
@@ -55,12 +69,13 @@
 
     <property name="built.webapp.name" value="webapp" />
     <property name="built.webapp.dir" value="${build.dir}/${built.webapp.name}" />
+    <property name="built.appengine.webapp.dir" value="${build.dir}/appengine" />
     
     <path id="server.class.path">
         <fileset dir="${server.lib.dir}">
             <include name="**/*.jar" />
         </fileset>
-        <pathelement location="${server.classes.dir}"/>
+        <pathelement path="${server.classes.dir}"/>
     </path>
 
     <path id="webapp.class.path">
@@ -70,7 +85,14 @@
         <fileset dir="${webapp.lib.dir}">
             <include name="**/*.jar" />
         </fileset>
-        <pathelement location="${webapp.classes.dir}"/>
+        <pathelement path="${webapp.classes.dir}"/>
+    </path>
+
+    <path id="appengine.class.path">
+        <path refid="webapp.class.path"/>
+        <fileset dir="${appengine.sdk.dir}/lib">
+            <include name="shared/**/*.jar" />
+        </fileset>
     </path>
 
     <path id="tests.class.path">
@@ -79,6 +101,8 @@
             <include name="**/*.jar" />
         </fileset>
     </path>
+
+    <!-- ================================================================== -->
 
     <target name="build_server">
         <mkdir dir="${server.classes.dir}" />
@@ -134,6 +158,51 @@
 
     <target name="jar" depends="jar_server, jar_webapp"/>
 
+    <!-- ================================================================== -->
+
+    <target name="prepare_webapp_appengine" depends="jar_webapp, build_modules">
+        <mkdir dir="${built.appengine.webapp.dir}" />
+        
+        <copy todir="${built.appengine.webapp.dir}">
+            <fileset dir="${webapp.dir}">
+                <include name="**/*"/>
+                <exclude name="WEB-INF/classes/**"/>
+                <exclude name="WEB-INF/lib-src/**"/>
+            </fileset>
+        </copy>
+        
+        <copy file="${build.dir}/${fullname}.jar" tofile="${built.appengine.webapp.dir}/WEB-INF/lib/${fullname}.jar"/>
+        
+        <copy todir="${built.appengine.webapp.dir}/WEB-INF/lib" flatten="true">
+            <fileset dir="${appengine.sdk.dir}/lib/user">
+                <include name="**/*.jar" />
+            </fileset>
+        </copy>
+        
+        <copy todir="${built.appengine.webapp.dir}">
+            <fileset dir="${modules.dir}">
+                <include name="**/*"/>
+                <exclude name="MOD-INF/src/**"/>
+                <exclude name="**/.*"/>
+                <exclude name="**/.*/**"/>
+            </fileset>
+        </copy>        
+
+        <copy todir="${built.appengine.webapp.dir}">
+            <fileset dir="${appengine.dir}">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+        
+        <replace file="${built.appengine.webapp.dir}/WEB-INF/appengine-web.xml">
+            <replacefilter token="$APPID" value="${appengine.app_id}"/>
+            <replacefilter token="$VERSION" value="${appengine.version}"/>
+        </replace>
+        
+    </target>
+
+    <!-- ================================================================== -->
+    
     <target name="prepare_reports">
         <mkdir dir="${reports.dir}" />
     </target>
@@ -209,6 +278,8 @@
             </fileset>
         </jslint>        
     </target>    
+
+    <!-- ================================================================== -->
 
     <target name="clean">
         <delete file="${build.dir}/${fullname}.jar" />

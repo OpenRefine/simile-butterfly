@@ -2,16 +2,11 @@ package edu.mit.simile.butterfly;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -42,8 +37,6 @@ import org.apache.commons.collections.OrderedMapIterator;
 import org.apache.commons.collections.map.ListOrderedMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -70,7 +63,6 @@ public class ButterflyModuleImpl implements ButterflyModule {
     protected static final Logger _logger = LoggerFactory.getLogger("butterfly.module");
     
     protected ClassLoader _classLoader;
-    protected ButterflyJanitor _janitor;
     protected Timer _timer;
     protected ServletConfig _config;
     protected File _path;
@@ -192,11 +184,6 @@ public class ButterflyModuleImpl implements ButterflyModule {
         } catch (Exception e) {
             _logger.error("Error cleaning temporary directory", e);
         }
-    }
-
-    public void setBundleJanitor(ButterflyJanitor janitor) {
-        _logger.trace("{} gets bundle janitor", this);
-        this._janitor = janitor;
     }
     
     public void setTimer(Timer timer) {
@@ -515,14 +502,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     public boolean sendWrappedText(HttpServletRequest request, HttpServletResponse response, URL resource, String encoding, String mimeType, String prologue, String epilogue, boolean absolute) throws Exception {
         return send(request, response, resource, true, encoding, mimeType, prologue, epilogue, absolute);
     }
-    
-    public boolean sendJavascript(HttpServletRequest request, HttpServletResponse response, String str, boolean recursive, boolean filtered, boolean absolute) throws Exception {
-        _logger.trace("> javascript: '{}' [recursive: {}, filtered: {}]", new Object[] { str, recursive, filtered });
-        boolean result = send(request, response, getJavascriptResource(str,recursive), filtered, "UTF-8", "text/javascript", null, null,absolute);
-        _logger.trace("< javascript: '{}' [recursive: {}, filtered: {}]", new Object[] { str, recursive, filtered });
-        return result; 
-    }
-    
+        
     public boolean sendTextFromTemplate(HttpServletRequest request, HttpServletResponse response, VelocityContext velocity, String template, String encoding, String mimeType, boolean absolute) throws Exception {
         _logger.trace("> template {} [{}|{}]", new String[] { template, encoding, mimeType });
         try {
@@ -694,58 +674,4 @@ public class ButterflyModuleImpl implements ButterflyModule {
         _logger.trace("< send {}", resource);
         return true;
     }
-
-    protected URL getJavascriptResource(String str, boolean recursive) throws Exception {
-        File file = getTempFile(str, recursive);
-        if (file.exists() && file.canRead()) {
-            return file.toURI().toURL();
-        } else {
-            File bundle = getTempFile(str, recursive);
-            if (!(bundle.exists() && bundle.canRead())) {
-                bundleJavascript(bundle, str, recursive);
-            }
-            return bundle.toURI().toURL();
-        }
-    }
-    
-    protected void bundleJavascript(File bundle, String str, boolean recursive) throws Exception {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(bundle), "UTF-8"));
-        URL resource = this.getResource(str);
-        if (resource.getProtocol().equals("file")) {
-            String url = resource.toExternalForm();
-            File source = new File(url.substring(5)); // remove "file:" from the URL
-            bundleJavascript(source,recursive,bundle,writer);
-            writer.close();
-        } else {
-            throw new RuntimeException("Cannot bundle the resoure '" + resource + "': protocol not supported.");
-        }
-    }
-
-    protected void bundleJavascript(File source, boolean recursive, File bundle, BufferedWriter writer) throws Exception {
-        if (source.isDirectory() && recursive && !source.getName().startsWith(".") && !source.getName().equals("MOD-INF")) {
-            // NOTE(SM): it's important that bundling proceeds with files first and then recurses into directories
-            // and we need to make this explicit because different operating systems exhibit different behaviors 
-            for (File f : source.listFiles((FileFilter) FileFileFilter.FILE)) {
-                bundleJavascript(f,recursive,bundle,writer);
-                writer.write("\n\n");
-            }
-            for (File f : source.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY)) {
-                bundleJavascript(f,recursive,bundle,writer);
-                writer.write("\n\n");
-            }
-        } else {
-            if (source.getName().endsWith(".js")) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(source),"UTF-8"));
-                IOUtils.copy(reader, writer);
-                reader.close();
-                _janitor.recordOrigin(bundle, source);
-            }
-        }
-    }
-    
-    protected File getTempFile(String str, boolean recursive) {
-        StringBuffer b = new StringBuffer(str);
-        if (recursive) b.append(".recursive");
-        return new File(this._tempDir, b.toString());
-    };
 }

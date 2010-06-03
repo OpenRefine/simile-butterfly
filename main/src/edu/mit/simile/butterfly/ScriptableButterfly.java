@@ -160,15 +160,6 @@ public class ScriptableButterfly extends ButterflyScriptableObject {
         responded();
         _logger.trace("< jsFunction_sendString");
     }
-
-    public void jsFunction_sendJavascript(Object request, Object response, String resource, boolean recursive, boolean filtered, boolean absolute) throws Exception {
-        _logger.trace("> jsFunction_sendPackedJavascript");
-        HttpServletRequest req = (HttpServletRequest) unwrap(request);
-        HttpServletResponse res = (HttpServletResponse) unwrap(response);
-        _module.sendJavascript(req, res, resource, recursive, filtered, absolute);
-        responded();
-        _logger.trace("< jsFunction_sendPackedJavascript");
-    }
     
     public void jsFunction_sendError(Object request, Object response, int code, String str) throws Exception {
         _logger.trace("> jsFunction_sendError");

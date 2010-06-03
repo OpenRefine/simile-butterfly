@@ -67,10 +67,6 @@ public interface ButterflyModule {
         
     public void setProperties(ExtendedProperties properties);
     
-    public void setTemporaryDir(File temp);
-    
-    public void setBundleJanitor(ButterflyJanitor janitor);
-    
     public void setTimer(Timer timer);
     
     // -------------- Getters --------------
@@ -130,8 +126,6 @@ public interface ButterflyModule {
     public boolean sendWrappedText(HttpServletRequest request, HttpServletResponse response, URL resource, String encoding, String mimeType, String prologue, String epilogue, boolean absolute) throws Exception;
     
     public boolean sendTextFromTemplate(HttpServletRequest request, HttpServletResponse response, VelocityContext velocity, String template, String encoding, String mimeType, boolean absolute) throws Exception;    
-
-    public boolean sendJavascript(HttpServletRequest request, HttpServletResponse response, String str, boolean recursive, boolean filtered, boolean absolute) throws Exception;
 
     public boolean sendString(HttpServletRequest request, HttpServletResponse response, String str, String encoding, String mimeType) throws Exception;
     
