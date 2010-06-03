@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="tests">
+  <test name="ButterflyTests">
+    <packages>
+      <package name="edu.mit.simile.butterfly.tests" />
+    </packages>
+  </test>
+</suite>

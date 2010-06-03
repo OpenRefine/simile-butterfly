@@ -1,0 +1,10 @@
+<h1>$title</h1>
+
+<ul>
+ <li><a href="dhtml/">DHTML Examples</a></li>
+</ul>
+
+<ul>
+ <li><a href="simple">Simple Templating</a></li>
+</ul>
+

@@ -1,0 +1,27 @@
+body {
+    font-family: "georgia", "times", "times new roman", serif;
+}
+
+a:link {
+	color: #222;
+}
+
+a:visited {
+	color: #444;
+}
+
+a:hover {
+	color: #000;
+}
+
+img {
+	border: none;
+}
+
+#path {
+	margin-bottom: 1em;
+}
+
+#footer {
+	margin-top: 3em;
+}

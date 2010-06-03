@@ -1,0 +1,15 @@
+<h1>Slideshow</h1>
+
+<p>This page contains a DHTML image slideshow implemented using the <a href="http://jquery.com/">jQuery</a> library. View the HTML source to appreciate it.</p>
+
+<div id="slideshow">
+	<div id="image" style="text-align: center"></div>
+
+	<table align="center" width="35%">
+		<tr>
+			<td align="left" width="25%"><a href="javascript:previous()" id="previous">&laquo; previous</a></td>
+			<td align="center"><span id="caption"/></td>
+			<td align="right" width="25%"><a href="javascript:next()" id="next">next &raquo;</a></td>
+		</tr>
+	</table>
+</div>

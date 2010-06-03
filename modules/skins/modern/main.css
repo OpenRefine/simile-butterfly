@@ -1,0 +1,33 @@
+body {
+    padding: 2em;
+    font-family: tahoma;
+}
+
+h1 {
+    color: #002F69;
+}
+
+h2 {
+    color: #002F69;
+}
+
+#path {
+    padding-bottom: 0.2em;
+    font-size: 90%;
+    border-bottom: 1px solid #3D7FAB;
+}
+
+#copyright {
+    margin-top: 5em;
+    padding-top: 0.2em;
+    font-size: 90%;
+    border-top: 1px solid #3D7FAB;
+    text-align: center;
+}
+
+#image img {
+    border: 1px solid #3D7FAB;
+	padding: 10px;
+	margin: 2em;
+	height: 300px;
+}

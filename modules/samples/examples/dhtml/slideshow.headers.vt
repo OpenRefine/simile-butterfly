@@ -1,0 +1,69 @@
+ <script src="[#jquery#]/jquery.js" type="text/javascript"></script>
+
+ <script type="text/javascript">
+
+	/*
+	 * The array of images we will show
+	 */    
+	var images = [ 
+		"chagall1.jpg" ,
+		"chagall2.jpg" ,
+		"chagall3.jpg"
+	];
+
+	/*
+	 * The pointer to the current image in the array of images
+	 */    
+	var index = Math.round((images.length - 1) * Math.random());
+		
+	/*
+	 * Initialize the page. This is called by jQuery as soon as the DOM is ready to be manipulated.
+	 * See below how this is invoked.
+	 */
+	function init() {
+		placeImage(index);
+	}
+
+	/*
+	 * Place the image indicated with the current index. Note the use of $() which is jQuery itself.
+	 */
+	function placeImage(index) {
+		$("#image").html("<img src='images/" + images[index] + "'/>");
+		$("#caption").html((index + 1) + " of " + images.length)
+	}
+
+	/*
+	 * Convenient method to fade in and out.
+	 */
+	function fade(selector, cont) {
+		$(selector).fadeTo("normal", 0.0, cont);
+		$(selector).fadeTo("normal", 1.0);
+	}
+				
+	/*
+	 * Invoked by clicking on "next"
+	 */    
+	function previous() {
+		index = (index == 0) ? images.length - 1 : index - 1;
+		fade("#slideshow", function() {
+			placeImage(index)
+		});
+	}
+	
+	/*
+	 * Invoked by clicking on "previous"
+	 */    
+	function next() {
+		index = (index == images.length - 1) ? 0 : index + 1;
+		fade("#slideshow", function() {
+			placeImage(index)
+		});
+	}
+
+	/*
+	 * This call is the jQuery equivalent of invoking onLoad, but it's faster
+	 * because it doesn't wait for all the images to be fetches before invoking
+	 */
+	$(init);
+	   
+  </script> 

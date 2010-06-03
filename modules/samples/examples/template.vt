@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+ <title Butterfly | $title</title>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+ #if ($headers) 
+	#parse($headers)
+ #end
+ <link rel="stylesheet" type="text/css" href="[#skin#]/default.css"/> 
+ <link rel="stylesheet" type="text/css" href="[#skin#]/main.css"/> 
+</head>
+
+<body>
+
+<div id="path">
+	#foreach($path in $paths)
+		<a href="$path.href">$path.name</a> &raquo;
+	#end
+	<span>$title</span>
+</div>
+
+#parse($body)
+
+</body>
+</html>
