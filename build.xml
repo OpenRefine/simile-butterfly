@@ -40,6 +40,8 @@
     <property name="server.lib.dir" value="${server.dir}/lib" />
     <property name="server.classes.dir" value="${server.dir}/classes" />
 
+    <property name="modules.dir" value="${basedir}/modules" />
+
     <property name="tests.dir" value="${main.dir}/tests" />
     <property name="tests.lib.dir" value="${tests.dir}/lib" />
     <property name="tests.src.dir" value="${tests.dir}/src" />
@@ -99,6 +101,13 @@
         </copy>
     </target>
 
+    <target name="build_modules" depends="build_webapp, build_server">
+        <mkdir dir="${modules.dir}/samples/extended-examples/MOD-INF/classes" />
+        <javac srcdir="${modules.dir}/samples/extended-examples/MOD-INF/src" destdir="${modules.dir}/samples/extended-examples/MOD-INF/classes" debug="true" includeAntRuntime="no">
+            <classpath refid="webapp.class.path" />
+        </javac>
+    </target>
+
     <target name="build_tests" depends="build_webapp, build_server">
         <mkdir dir="${tests.classes.dir}" />
         <javac srcdir="${tests.src.dir}" destdir="${tests.classes.dir}" debug="true" includeAntRuntime="no">
@@ -113,7 +122,7 @@
         </copy>
     </target>
 
-    <target name="build" depends="build_server, build_webapp"/>
+    <target name="build" depends="build_server, build_webapp, build_modules"/>
 
     <target name="jar_server" depends="build_server">
         <jar destfile="${build.dir}/${fullname}-server.jar" basedir="${server.classes.dir}"/>
