@@ -331,6 +331,10 @@ appengine_upload() {
     appengine_prepare
     
     ANT_PARAMS="-Dappengine.sdk.dir=${APPENGINE_HOME}"
+    if [ "$1" ]; then
+        ANT_PARAMS="$ANT_PARAMS -Dappengine.version=$1"
+    fi
+        
     ant prepare_webapp_appengine
     
     "$APPENGINE" update "$BUILD_DIR/appengine"
@@ -551,7 +555,7 @@ case "$ACTION" in
   pmd) pmd;;  
   cpd) cpd;;  
   jslint) jslint;;  
-  appengine_upload) appengine_upload;;
+  appengine_upload) appengine_upload $1;;
   run) run;;  
   *) usage; ;;
 esac
