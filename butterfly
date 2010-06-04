@@ -305,7 +305,8 @@ run() {
     fi
     
     if [ -d $SERVER_CLASSES_DIR ]; then
-        add_option "-Dserver.autoreloading=true"
+        add_option "-Dserver.autoreload=true"
+        add_option "-Dbutterfly.autoreload=true"
     fi
                     
     CLASSPATH="$SERVER_CLASSES_DIR${SEP}$SERVER_LIB_DIR/*"

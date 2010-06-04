@@ -116,7 +116,7 @@ class ServerImpl extends Server {
         this.setSendServerVersion(true);
 
         // Enable context autoreloading
-        if (Configurations.getBoolean("server.autoreloading",false)) {
+        if (Configurations.getBoolean("server.autoreload",false)) {
             scanForUpdates(webapp, context);
         }
         

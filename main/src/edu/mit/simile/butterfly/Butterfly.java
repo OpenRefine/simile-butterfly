@@ -56,18 +56,18 @@ import edu.mit.simile.butterfly.velocity.Super;
  * manages the dispatching of requests to the modules that
  * are supposed to handle them.
  */
-public class Butterfly extends HttpServlet implements Runnable {
+public class Butterfly extends HttpServlet {
 
     public static final String HOST_HEADER = "X-Forwarded-Host";
     public static final String CONTEXT_HEADER = "X-Context-Path";
     
     private static final long serialVersionUID = 1938797827088619577L;
 
-    private static final long developmentWatcherDelay = 1000;
-    private static final long productionWatcherDelay = 3000;
+    private static final long watcherDelay = 1000;
     
     public static final String NAME = "butterfly.name";
-    public static final String DEVELOPMENT = "butterfly.development";
+    public static final String APPENGINE = "butterfly.appengine";
+    public static final String AUTORELOAD = "butterfly.autoreload";
     public static final String HOME = "butterfly.home";
     public static final String ZONE = "butterfly.zone";
     public static final String BASE_URL = "butterfly.url";
@@ -141,11 +141,16 @@ public class Butterfly extends HttpServlet implements Runnable {
         return prefix.toString();
     }    
 
+    public static boolean isGAE(ServletConfig config) {
+        return (config.getServletContext().getServerInfo().indexOf("Google App Engine") != -1);
+    }
+    
     // ---------------------------------------------------------------
 
     transient private Logger _logger;
 
-    private boolean _development;
+    private boolean _autoreload;
+    private boolean _appengine;
     private String _name;
     private int _routingCookieMaxAge;
     
@@ -159,7 +164,6 @@ public class Butterfly extends HttpServlet implements Runnable {
     protected File _contextDir;
     protected File _homeDir;
     protected File _webInfDir;
-    protected File _tempDir;
     protected Exception _configurationException;
 
     protected boolean _configured = false;
@@ -167,21 +171,20 @@ public class Butterfly extends HttpServlet implements Runnable {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+
+        _appengine = isGAE(config);
         
         _name = System.getProperty(NAME, "butterfly");
 
         _context = config.getServletContext();
         _context.setAttribute(NAME, _name);
-        
-        _tempDir = (File) _context.getAttribute("javax.servlet.context.tempdir");
-        
+        _context.setAttribute(APPENGINE, _appengine);
+                
         _contextDir = new File(_context.getRealPath("/"));
         _webInfDir = new File(_contextDir, "WEB-INF");
-        _timer = new Timer(true);
         _properties = new ExtendedProperties();
-
         _mounter = new ButterflyMounter();
-        
+
         // Load the butterfly properties
         String props = System.getProperty("butterfly.properties");
         File butterflyProperties = (props == null) ? new File(_webInfDir, "butterfly.properties") : new File(props);
@@ -211,25 +214,27 @@ public class Butterfly extends HttpServlet implements Runnable {
             _properties.setProperty(key, value);
         }
 
-        _development = _properties.getBoolean(DEVELOPMENT, false);
-        _scriptWatcher = new ButterflyScriptWatcher();
+        _autoreload = _properties.getBoolean(AUTORELOAD, false);
         
         String log4j = System.getProperty("butterfly.log4j");
         File logProperties = (log4j == null) ? new File(_webInfDir, "log4j.properties") : new File(log4j);
         
         if (logProperties.exists()) {
             _logger = LoggerFactory.getLogger(_name);
-            if (_development) {
-                PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), developmentWatcherDelay);
+            if (_autoreload) {
+                PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), watcherDelay);
             } else {
-                PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), productionWatcherDelay);
+                PropertyConfigurator.configure(logProperties.getAbsolutePath());
             }
         }
 
         _logger.info("Starting {} ...", _name);
 
         _logger.info("Properties loaded from {}", butterflyProperties);
-        
+
+        if (_autoreload) _logger.info("Autoreloading is enabled");
+        if (_appengine) _logger.info("Running in Google App Engine");
+
         _logger.debug("> init");
 
         _logger.debug("> initialize classloader");
@@ -241,33 +246,29 @@ public class Butterfly extends HttpServlet implements Runnable {
                     }
                 }
              );
-            TimerTask classloaderWatcher = _classLoader.getClassLoaderWatcher(new Trigger(_contextDir));
-            _timer.schedule(classloaderWatcher, developmentWatcherDelay, developmentWatcherDelay);
+            
             Thread.currentThread().setContextClassLoader(_classLoader);
             _classLoader.watch(butterflyProperties); // reload if the butterfly properties change
             contextFactory.initApplicationClassLoader(_classLoader); // tell rhino to use this classloader as well
+
+            if (_autoreload && !_appengine) {
+                _timer = new Timer(true);
+                TimerTask classloaderWatcher = _classLoader.getClassLoaderWatcher(new Trigger(_contextDir));
+                _timer.schedule(classloaderWatcher, watcherDelay, watcherDelay);
+            }
         } catch (Exception e) {
             throw new ServletException("Failed to load butterfly classloader", e);
         }
         _logger.debug("< initialize classloader");
 
-        if (_development) {
+        if (_autoreload && !_appengine) {
             _logger.debug("> initialize script watcher");
-            _timer.schedule(_scriptWatcher, developmentWatcherDelay, developmentWatcherDelay);
+            _scriptWatcher = new ButterflyScriptWatcher();
+            _timer.schedule(_scriptWatcher, watcherDelay, watcherDelay);
             _logger.debug("< initialize script watcher");
         }
 
-        try {
-            _logger.debug("> spawn configuration thread");
-            Thread configurationThread = new Thread(this);
-            configurationThread.start();
-            _logger.debug("< spawn configuration thread");
-        } catch (Exception e) {
-            // for Google App Engine or other strict servlet containers that don't allow spawning threads
-            _logger.debug("> inline configuration");
-            this.run();
-            _logger.debug("< inline configuration");
-        }
+        this.configure();
         
         _logger.debug("< init");
     }
@@ -275,6 +276,7 @@ public class Butterfly extends HttpServlet implements Runnable {
     @Override
     public void destroy() {
         _logger.info("Stopping Butterfly...");
+        
         for (ButterflyModule m : _modulesByName.values()) {
             try {
                 _logger.debug("> destroying {}", m);
@@ -284,16 +286,16 @@ public class Butterfly extends HttpServlet implements Runnable {
                 _logger.error("Exception caught while destroying '" + m + "'", e);
             }
         }
-        _timer.cancel();
+        
+        if (_timer != null) {
+            _timer.cancel();
+        }
+        
         _logger.info("done.");
     }
     
-    /*
-     * We do configuration asynchronously so that we can start responding 
-     * to web requests right away. 
-     */
     @SuppressWarnings("unchecked")
-    public void run() {
+    public void configure() {
         _logger.debug("> configure");
 
         _logger.debug("> process properties");
@@ -430,7 +432,8 @@ public class Butterfly extends HttpServlet implements Runnable {
                 _logger.trace("{}: {}", header, request.getHeader(header));
             }
         } else if (_logger.isInfoEnabled()) {
-            _logger.info("{} {} [{}]", new String[] { method,path,zone.getName() });
+            String zoneName = (zone != null) ? zone.getName() : "";
+            _logger.info("{} {} [{}]", new String[] { method,path,zoneName });
         }
 
         setRoutingCookie(request, response);
@@ -557,11 +560,6 @@ public class Butterfly extends HttpServlet implements Runnable {
         File path = new File(p.getString(PATH_PROP));
         _logger.debug("Module path: {}", path);
             
-        File tempDir = new File(_tempDir,name);
-        if (!tempDir.exists()) { 
-            tempDir.mkdirs();
-        }
-
         File classes = new File(path,"MOD-INF/classes");
         if (classes.exists()) {
             _classLoader.addRepository(classes);
@@ -826,7 +824,7 @@ public class Butterfly extends HttpServlet implements Runnable {
                         URL initializer = this.getClass().getClassLoader().getResource("edu/mit/simile/butterfly/Butterfly.js");
                         initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()));
                         setScript(m, initializer, context.compileReader(initializerReader, "Butterfly.js", 1, null));
-                        _scriptWatcher.watch(initializer,m);
+                        watch(initializer,m);
                         _logger.trace("Parsed javascript initializer successfully");
                     } finally {
                         if (initializerReader != null) initializerReader.close();
@@ -838,7 +836,7 @@ public class Butterfly extends HttpServlet implements Runnable {
                         try{
                             controllerReader = new BufferedReader(new InputStreamReader(controllerURL.openStream()));
                             setScript(m, controllerURL, context.compileReader(controllerReader, controllerURL.toString(), 1, null));
-                            _scriptWatcher.watch(controllerURL,m);
+                            watch(controllerURL,m);
                             _logger.trace("Parsed javascript controller successfully: {}", controllerURL);
                         } finally {
                             if (controllerReader != null) controllerReader.close();
@@ -870,6 +868,12 @@ public class Butterfly extends HttpServlet implements Runnable {
         ButterflyModule extended = mod.getExtendedModule();
         if (extended != null) {
             setScriptable(extended, scriptable);
+        }
+    }
+    
+    protected void watch(URL script, ButterflyModule module) throws IOException {
+        if (_scriptWatcher != null) {
+            _scriptWatcher.watch(script, module);
         }
     }
     
@@ -960,7 +964,7 @@ class ButterflyScriptWatcher extends TimerTask {
     private Map<URL,ButterflyModule> scripts = new HashMap<URL,ButterflyModule>();
     private Map<URL,Long> lastModifieds = new HashMap<URL,Long>();
             
-    protected void watch(URL script, ButterflyModule module) throws Exception {
+    protected void watch(URL script, ButterflyModule module) throws IOException  {
         _logger.debug("Watching {}", script);
         this.lastModifieds.put(script, script.openConnection().getLastModified());
         this.scripts.put(script, module);

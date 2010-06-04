@@ -89,7 +89,9 @@ public class ButterflyClassLoader extends URLClassLoader {
                 try  {
                 	_logger.trace("Adding folder: {}", repository);
                     super.addURL(repository.toURI().toURL());
-                    this._watcher.addFile(repository);
+                    if (this._watcher != null) {
+                        this._watcher.addFile(repository);
+                    }
                 } catch (MalformedURLException e) {
                     throw new IllegalArgumentException(e.toString());
                 }
@@ -110,7 +112,9 @@ public class ButterflyClassLoader extends URLClassLoader {
     }
     
     public void watch(File file) {
-        this._watcher.watch(file);
+        if (this._watcher != null) {
+            this._watcher.watch(file);
+        }
     }
     
     private void addJar(File file) {
