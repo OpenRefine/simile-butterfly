@@ -136,7 +136,7 @@ public class LinkRewriter extends PrintWriter {
                 _writer.write(mountPointChars, 0, slashed ? mountPointChars.length - 1 : mountPointChars.length);
                 write(buf, _end+1, off + len - _end - 1);
             } else {
-                _logger.trace("module NOT found");
+                _logger.info("module NOT found");
                 _writer.write(buf, off, _end - off); // write the part processed so far
                 write(buf, _end, len - (_end - off)); // and continue processing recursively
             }

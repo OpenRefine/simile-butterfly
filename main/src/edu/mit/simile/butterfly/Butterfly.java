@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -218,16 +219,16 @@ public class Butterfly extends HttpServlet {
         
         String log4j = System.getProperty("butterfly.log4j");
         File logProperties = (log4j == null) ? new File(_webInfDir, "log4j.properties") : new File(log4j);
-        
         if (logProperties.exists()) {
-            _logger = LoggerFactory.getLogger(_name);
-            if (_autoreload) {
+            if (_autoreload && !_appengine) {
                 PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), watcherDelay);
             } else {
                 PropertyConfigurator.configure(logProperties.getAbsolutePath());
             }
         }
 
+        _logger = LoggerFactory.getLogger(_name);
+        
         _logger.info("Starting {} ...", _name);
 
         _logger.info("Properties loaded from {}", butterflyProperties);
@@ -298,7 +299,7 @@ public class Butterfly extends HttpServlet {
     public void configure() {
         _logger.debug("> configure");
 
-        _logger.debug("> process properties");
+        _logger.info("> process properties");
         try {
 
             String homePath = _properties.getString(HOME);
@@ -352,22 +353,22 @@ public class Butterfly extends HttpServlet {
         } catch (Exception e) {
             _configurationException = new Exception("Failed to load butterfly properties", e);
         }
-        _logger.debug("< process properties");
-                                
-        _logger.debug("> load modules");
+        _logger.info("< process properties");
+
+        _logger.info("> load modules");
         List<String> paths = _properties.getList("butterfly.modules.path");
         for (String path : paths) {
             findModulesIn(absolutize(_homeDir, path));
         }
-        _logger.debug("< load modules");
+        _logger.info("< load modules");
         
-        _logger.debug("> create modules");
+        _logger.info("> create modules");
         for (String name : _moduleProperties.keySet()) {
             createModule(name);
         }
-        _logger.debug("< create modules");
+        _logger.info("< create modules");
         
-        _logger.debug("> load module wirings");
+        _logger.info("> load module wirings");
         ExtendedProperties wirings = new ExtendedProperties();
         try {
             // Load the wiring properties
@@ -380,25 +381,25 @@ public class Butterfly extends HttpServlet {
         } catch (Exception e) {
             _configurationException = new Exception("Failed to load module wirings", e);
         }
-        _logger.debug("< load module wirings");
-        
-        _logger.debug("> wire modules");
+        _logger.info("< load module wirings");
+
+        _logger.info("> wire modules");
         try {
             wireModules(wirings);
         } catch (Exception e) {
             _configurationException = new Exception("Failed to wire modules", e);
         }
-        _logger.debug("< wire modules");
+        _logger.info("< wire modules");
 
-        _logger.debug("> configure modules");
+        _logger.info("> configure modules");
         try {
             configureModules();
         } catch (Exception e) {
             _configurationException = new Exception("Failed to configure modules", e);
         }
-        _logger.debug("< configure modules");
-        
-        _logger.debug("> initialize modules");
+        _logger.info("< configure modules");
+                
+        _logger.info("> initialize modules");
         for (ButterflyModule m : _modulesByName.values()) {
             try {
                 _logger.debug("> initialize " + m.getName());
@@ -408,7 +409,7 @@ public class Butterfly extends HttpServlet {
                 _configurationException = new Exception("Failed to initialize module " + m, e);
             }
         }
-        _logger.debug("< initialize modules");
+        _logger.info("< initialize modules");
         
         _configured = true;
         
@@ -512,6 +513,7 @@ public class Butterfly extends HttpServlet {
     protected static final String PATH_PROP = "__path__";
     
     protected void findModulesIn(File f) {
+        _logger.debug("look for modules in {}", f);
         File modFile = new File(f,"MOD-INF");
         if (modFile.exists()) {
             _logger.trace("> findModulesIn({})", f);
@@ -539,8 +541,13 @@ public class Butterfly extends HttpServlet {
             if (files != null) {
                 for (int i = 0; i < files.length; i++) {
                     File file = files[i];
-                    if (file.isDirectory()) {
-                        findModulesIn(file);
+                    try {
+                        if (file.isDirectory()) {
+                            findModulesIn(file);
+                        }
+                    } catch (AccessControlException e) {
+                        // skip
+                        // NOTE: this is needed for Google App Engine that doesn't like us snooping around the internal file system
                     }
                 }
             }
@@ -621,6 +628,8 @@ public class Butterfly extends HttpServlet {
 	protected void wireModules(ExtendedProperties wirings) {
         _logger.trace("> wireModules()");
 
+        _logger.info("mounting modules");
+        
         for (String name : _moduleProperties.keySet()) {
             _logger.trace("> Mounting module: {}", name);
             ButterflyModule m = _modulesByName.get(name);
@@ -669,7 +678,7 @@ public class Butterfly extends HttpServlet {
             }
             _logger.trace("< Expanding properties for module: {}", name);
         }
-            
+        
         for (String name : _moduleProperties.keySet()) {
             _logger.trace("> Inject dependencies in module: {}", name);
             ExtendedProperties p = _moduleProperties.get(name);

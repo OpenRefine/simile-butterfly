@@ -166,6 +166,7 @@
         <copy todir="${built.appengine.webapp.dir}">
             <fileset dir="${webapp.dir}">
                 <include name="**/*"/>
+                <exclude name="WEB-INF/lib/slf4j-log4j*"/>
                 <exclude name="WEB-INF/classes/**"/>
                 <exclude name="WEB-INF/lib-src/**"/>
             </fileset>
@@ -178,8 +179,10 @@
                 <include name="**/*.jar" />
             </fileset>
         </copy>
+
+        <copy file="modules.properties" tofile="${built.appengine.webapp.dir}/WEB-INF/modules.properties"/>
         
-        <copy todir="${built.appengine.webapp.dir}">
+        <copy todir="${built.appengine.webapp.dir}/modules">
             <fileset dir="${modules.dir}">
                 <include name="**/*"/>
                 <exclude name="MOD-INF/src/**"/>
@@ -198,7 +201,7 @@
             <replacefilter token="$APPID" value="${appengine.app_id}"/>
             <replacefilter token="$VERSION" value="${appengine.version}"/>
         </replace>
-        
+                
     </target>
 
     <!-- ================================================================== -->

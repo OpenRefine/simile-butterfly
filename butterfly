@@ -52,7 +52,9 @@ and <action> is one of
    build ..................... Build Butterfly      
    run ....................... Run Butterfly [default]
 
-   appengine_upload .......... Upload Butterfly to Google App Engine
+   appengine_build ........... Build Butterfly webapp for Google App Engine
+   appengine_run ............. Run Butterfly webapp for Google App Engine in local server
+   appengine_upload .......... Upload Butterfly webapp to Google App Engine
    
    test ...................... Run Butterfly tests
    
@@ -194,6 +196,7 @@ appengine_prepare() {
         error "Environment variable APPENGINE_HOME is set to '$APPENGINE_HOME' which doesn't point to a valid Google App Engine SDK."
     fi
     APPENGINE="$APPENGINE_HOME/bin/appcfg.sh"
+    APPENGINE_LOCAL="$APPENGINE_HOME/bin/dev_appserver.sh"
 }
 
 ant_prepare() {
@@ -326,8 +329,8 @@ run() {
         SERVER_PID="$!"
     fi
 }
-   
-appengine_upload() {
+
+appengine_build() {
     appengine_prepare
     
     ANT_PARAMS="-Dappengine.sdk.dir=${APPENGINE_HOME}"
@@ -336,8 +339,16 @@ appengine_upload() {
     fi
         
     ant prepare_webapp_appengine
-    
+}
+       
+appengine_upload() {
+    appengine_build $1
     "$APPENGINE" update "$BUILD_DIR/appengine"
+}
+
+appengine_run() {
+    appengine_build $1
+    "$APPENGINE_LOCAL" "$BUILD_DIR/appengine"
 }
 
 findbugs() {
@@ -555,6 +566,8 @@ case "$ACTION" in
   pmd) pmd;;  
   cpd) cpd;;  
   jslint) jslint;;  
+  appengine_build) appengine_build $1;;
+  appengine_run) appengine_run $1;;
   appengine_upload) appengine_upload $1;;
   run) run;;  
   *) usage; ;;

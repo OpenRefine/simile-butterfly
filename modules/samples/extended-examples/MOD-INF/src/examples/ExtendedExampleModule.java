@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.VelocityContext;
 
 import edu.mit.simile.butterfly.ButterflyModuleImpl;
+import edu.mit.simile.butterfly.MountPoint;
 
 public class ExtendedExampleModule extends ButterflyModuleImpl {
             
@@ -25,8 +26,10 @@ public class ExtendedExampleModule extends ButterflyModuleImpl {
     @Override
     public void init(ServletConfig config) throws Exception {
         super.init(config);
+        
+        MountPoint mountPoint = getMountPoint();
         _levelNames.put("", "Home");
-        _levelNames.put(getMountPoint().getMountPoint().replace("/",""), "Samples");
+        _levelNames.put((mountPoint == null) ? "" : mountPoint.getMountPoint().replace("/",""), "Samples");
         _levelNames.put("dhtml", "DHTML");
     }
     
