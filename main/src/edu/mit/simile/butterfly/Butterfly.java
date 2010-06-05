@@ -426,46 +426,50 @@ public class Butterfly extends HttpServlet {
         String path = request.getPathInfo();
         String urlQuery = request.getQueryString();
 
-        Zone zone = _mounter.getZone(request);
-        
-        if (_logger.isDebugEnabled()) {
-            _logger.debug("> " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
-            Enumeration<String> en = request.getHeaderNames();
-            while (en.hasMoreElements()) {
-                String header = en.nextElement();
-                _logger.trace("{}: {}", header, request.getHeader(header));
+        if (_mounter != null) {
+            Zone zone = _mounter.getZone(request);
+            
+            if (_logger.isDebugEnabled()) {
+                _logger.debug("> " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
+                Enumeration<String> en = request.getHeaderNames();
+                while (en.hasMoreElements()) {
+                    String header = en.nextElement();
+                    _logger.trace("{}: {}", header, request.getHeader(header));
+                }
+            } else if (_logger.isInfoEnabled()) {
+                String zoneName = (zone != null) ? zone.getName() : "";
+                _logger.info("{} {} [{}]", new String[] { method,path,zoneName });
             }
-        } else if (_logger.isInfoEnabled()) {
-            String zoneName = (zone != null) ? zone.getName() : "";
-            _logger.info("{} {} [{}]", new String[] { method,path,zoneName });
-        }
-
-        setRoutingCookie(request, response);
-        
-        try {
-            if (_configured) {
-                if (_configurationException == null) {
-                    ButterflyModule module = _mounter.getModule(path,zone);
-                    _logger.debug("Module '{}' will handle the request", module.getName());
-                    String localPath = module.getRelativePath(request);
-                    if (!module.process(localPath, request, response)) {
-                        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    
+            setRoutingCookie(request, response);
+            
+            try {
+                if (_configured) {
+                    if (_configurationException == null) {
+                        ButterflyModule module = _mounter.getModule(path,zone);
+                        _logger.debug("Module '{}' will handle the request", module.getName());
+                        String localPath = module.getRelativePath(request);
+                        if (!module.process(localPath, request, response)) {
+                            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        }
+                    } else {
+                        error(response, "Butterfly Error", "Butterfly incurred in the following errors while initializing:", _configurationException);
                     }
                 } else {
-                    error(response, "Butterfly Error", "Butterfly incurred in the following errors while initializing:", _configurationException);
+                    delay(response, "Butterfly is still initializing...");
                 }
-            } else {
-                delay(response, "Butterfly is still initializing...");
+            } catch (FileNotFoundException e) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } catch (Exception e) {
+                error(response, "Butterfly Error", "Butterfly caught the following error while processing the request:", e);
             }
-        } catch (FileNotFoundException e) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-        } catch (Exception e) {
-            error(response, "Butterfly Error", "Butterfly caught the following error while processing the request:", e);
+    
+            response.flushBuffer();
+            if (_logger.isDebugEnabled()) _logger.debug("< " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
+
+        } else {
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
-
-        response.flushBuffer();
-
-        if (_logger.isDebugEnabled()) _logger.debug("< " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
     }
     
     // ---------------------------- private -----------------------------------
