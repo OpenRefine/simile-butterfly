@@ -156,7 +156,7 @@
         <jar destfile="${build.dir}/${fullname}.jar" basedir="${webapp.classes.dir}"/>
     </target>
 
-    <target name="jar" depends="jar_server, jar_webapp"/>
+    <target name="jar" depends="build, jar_server, jar_webapp"/>
 
     <!-- ================================================================== -->
 
@@ -166,8 +166,7 @@
         <copy todir="${built.appengine.webapp.dir}">
             <fileset dir="${webapp.dir}">
                 <include name="**/*"/>
-                <exclude name="WEB-INF/lib/slf4j-log4j*"/>
-                <exclude name="WEB-INF/classes/**"/>
+                <exclude name="WEB-INF/lib/*log4j*"/>
                 <exclude name="WEB-INF/lib-src/**"/>
             </fileset>
         </copy>
@@ -186,6 +185,8 @@
             <fileset dir="${modules.dir}">
                 <include name="**/*"/>
                 <exclude name="MOD-INF/src/**"/>
+                <exclude name="MOD-INF/classes/**"/>
+                <exclude name="MOD-INF/lib-src/**"/>
                 <exclude name="**/.*"/>
                 <exclude name="**/.*/**"/>
             </fileset>

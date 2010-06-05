@@ -40,6 +40,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Script;
@@ -217,13 +218,15 @@ public class Butterfly extends HttpServlet {
 
         _autoreload = _properties.getBoolean(AUTORELOAD, false);
         
-        String log4j = System.getProperty("butterfly.log4j");
-        File logProperties = (log4j == null) ? new File(_webInfDir, "log4j.properties") : new File(log4j);
-        if (logProperties.exists()) {
-            if (_autoreload && !_appengine) {
-                PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), watcherDelay);
-            } else {
-                PropertyConfigurator.configure(logProperties.getAbsolutePath());
+        if (!_appengine) {
+            String log4j = System.getProperty("butterfly.log4j");
+            File logProperties = (log4j == null) ? new File(_webInfDir, "log4j.properties") : new File(log4j);
+            if (logProperties.exists()) {
+                if (_autoreload) {
+                    PropertyConfigurator.configureAndWatch(logProperties.getAbsolutePath(), watcherDelay);
+                } else {
+                    PropertyConfigurator.configure(logProperties.getAbsolutePath());
+                }
             }
         }
 
@@ -771,6 +774,14 @@ public class Butterfly extends HttpServlet {
                     // Set our special parent injection directive
                     properties.setProperty("userdirective", Super.class.getName());
         
+                    // Set logging properties
+                    if (_appengine) {
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.JdkLogChute");
+                    } else {
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
+                        properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
+                    }
+
                     // create a module-specific velocity engine
                     VelocityEngine velocity = new VelocityEngine();
                     velocity.setApplicationAttribute("module", m); // this is how we pass the module to the resource loader
