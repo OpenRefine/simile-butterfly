@@ -332,7 +332,6 @@ public class ButterflyModuleImpl implements ButterflyModule {
     // ------------------------------------------------------------------------------------------------
     
     protected Pattern images_pattern = Pattern.compile("^/?.*\\.(jpg|gif|png)$");
-    protected Pattern favicon_pattern = Pattern.compile("^/?favicon.ico$");
     protected Pattern mod_inf_pattern = Pattern.compile("^.*/MOD-INF/.*$");
 
     protected String encoding = "UTF-8";
@@ -430,7 +429,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
 
         m = images_pattern.matcher(path);
         if (m.matches()) {
-            return sendBinary(request, response, path, "images/" + m.group(1));
+            return sendBinary(request, response, path, "image/" + m.group(1));
         }
 
         if (path.endsWith(".css")) {
@@ -444,12 +443,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
         if (path.endsWith(".xml")) {
             return sendText(request, response, path, encoding, "application/xml",false);
         }
-        
-        m = favicon_pattern.matcher(path);
-        if (m.matches()) {
-            return sendBinary(request, response, "images/icon.png", "image/png");
-        }
-        
+                
         m = mod_inf_pattern.matcher(path);
         if (m.matches()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
