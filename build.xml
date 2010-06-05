@@ -154,6 +154,7 @@
     
     <target name="jar_webapp" depends="build_webapp">
         <jar destfile="${build.dir}/${fullname}.jar" basedir="${webapp.classes.dir}"/>
+        <jar destfile="${build.dir}/${fullname}-sources.jar" basedir="${webapp.src.dir}"/>
     </target>
 
     <target name="jar" depends="build, jar_server, jar_webapp"/>
