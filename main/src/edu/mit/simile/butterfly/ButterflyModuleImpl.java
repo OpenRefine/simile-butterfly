@@ -50,6 +50,11 @@ import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.metaweb.lessen.Utilities;
+import com.metaweb.lessen.tokenizers.CondensingTokenizer;
+import com.metaweb.lessen.tokenizers.IndentingTokenizer;
+import com.metaweb.lessen.tokenizers.Tokenizer;
+
 
 /**
  * This class is the base implementation of ButterflyModule and 
@@ -436,6 +441,10 @@ public class ButterflyModuleImpl implements ButterflyModule {
             return sendText(request, response, path, encoding, "text/css",false);
         }
 
+        if (path.endsWith(".less")) {
+            return sendLessen(request, response, path, encoding, "text/css",false);
+        }
+
         if (path.endsWith(".html")) {
             return sendText(request, response, path, encoding, "text/html",false);
         }
@@ -506,6 +515,29 @@ public class ButterflyModuleImpl implements ButterflyModule {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
         _logger.trace("< template {} [{}|{}]", new String[] { template, encoding, mimeType });
+        return true; 
+    }
+    
+    public boolean sendLessen(HttpServletRequest request, HttpServletResponse response, String path, String encoding, String mimeType, boolean absolute) throws Exception {
+        URL url = getResource(path);
+        
+        Map<String, String> variables = new HashMap<String, String>();
+        variables.put("module", _name);
+        
+        Tokenizer tokenizer = Utilities.openLess(url, variables);
+        tokenizer = new CondensingTokenizer(tokenizer, false);
+        tokenizer = new IndentingTokenizer(tokenizer);
+        
+        return sendLessenTokenStream(request, response, tokenizer, encoding, "text/css",false);
+    }
+    
+    public boolean sendLessenTokenStream(HttpServletRequest request, HttpServletResponse response, Tokenizer tokenizer, String encoding, String mimeType, boolean absolute) throws Exception {
+        try {
+            response.setContentType(mimeType);
+            Utilities.write(tokenizer, getFilteringWriter(request, response, absolute));
+        } catch (ResourceNotFoundException e) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
         return true; 
     }
 

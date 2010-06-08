@@ -1,0 +1,17 @@
+// Definitions shared among panels
+
+@import-less url("../common.less"); // this import statement will NOT be kept in the output
+
+@text-size: 12pt;
+@text-color: #663300; // overrides same definition in common.less
+
+.$module-panel {
+  @padding: 20px;
+  @radius: @padding * 0.75;
+  
+  padding: @padding;
+  margin: @padding / 2 0;
+  
+  .round-corners (@radius, 3px, lightgray);
+}
+

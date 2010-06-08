@@ -1,0 +1,16 @@
+// Root definitions
+
+@text-color: #003366;
+@link-color: #3300aa;
+
+.round-corners(@radius: 10px, @thickness: 2px, @color: gray) {
+  -moz-border-radius: @radius;
+  -webkit-border-radius: @radius;
+  border-radius: @radius;
+  border: @thickness solid @color;
+}
+
+body {
+  color: @text-color;
+}
+
