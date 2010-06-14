@@ -90,6 +90,8 @@ public class ButterflyModuleImpl implements ButterflyModule {
     
     public void init(ServletConfig config) throws Exception {
         _config = config;
+        
+        scriptInit();
     }
     
     public void destroy() throws Exception {
@@ -616,6 +618,23 @@ public class ButterflyModuleImpl implements ButterflyModule {
     
     // ------------------------------------------------------------------------------------------------
 
+    protected void scriptInit() throws Exception {
+        Context context = ContextFactory.getGlobal().enterContext();
+        Scriptable scope = new ButterflyScope(this, context);
+        
+        initScope(context,scope);
+        
+        String functionName = "init";
+        try {
+            Object fun = context.compileString(functionName, null, 1, null).exec(context, scope);
+            if (fun != null && fun instanceof Function) {
+                ((Function) fun).call(context, scope, scope, new Object[] {});
+            }
+        } catch (EcmaError ee) {
+            _logger.error("Error initializing module " + getName() + " by script function init()", ee);
+        }
+    }
+    
     protected boolean processScript(String path, HttpServletRequest request, HttpServletResponse response) throws Exception {
         boolean result = false;
         if (_scripts.size() > 0) {

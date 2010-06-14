@@ -3,6 +3,13 @@ var html = "text/html";
 var encoding = "UTF-8";
 
 /*
+ *  This optional function is invoked from the module's init() Java function.
+ */
+function init() {
+    // Packages.java.lang.System.err.println("Initializing by script");
+}
+
+/*
  * This is the function that is invoked by Butterfly
  */
 function process(path, request, response) {
