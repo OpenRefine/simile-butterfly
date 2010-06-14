@@ -628,10 +628,14 @@ public class ButterflyModuleImpl implements ButterflyModule {
         try {
             Object fun = context.compileString(functionName, null, 1, null).exec(context, scope);
             if (fun != null && fun instanceof Function) {
-                ((Function) fun).call(context, scope, scope, new Object[] {});
+                try {
+                    ((Function) fun).call(context, scope, scope, new Object[] {});
+                } catch (EcmaError ee) {
+                    _logger.error("Error initializing module " + getName() + " by script function init()", ee);
+                }
             }
         } catch (EcmaError ee) {
-            _logger.error("Error initializing module " + getName() + " by script function init()", ee);
+            // ignore
         }
     }
     
