@@ -49,7 +49,8 @@ public class ButterflyScope extends ScriptableObject {
         _scriptableButterfly.init(module);
         _scriptableButterfly.setParentScope(this);
         super.put("butterfly", this, _scriptableButterfly);
-
+        super.put("module", this, module);
+        
         prepareScope(context, scope, module);
     	_logger.trace("< new ButterflyScope for module: {}", module.getName());
     }
