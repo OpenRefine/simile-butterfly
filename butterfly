@@ -197,6 +197,8 @@ appengine_prepare() {
     fi
     APPENGINE="$APPENGINE_HOME/bin/appcfg.sh"
     APPENGINE_LOCAL="$APPENGINE_HOME/bin/dev_appserver.sh"
+    
+    ANT_PARAMS="$ANT_PARAMS -Dappengine.sdk.dir=$APPENGINE_HOME"
 }
 
 ant_prepare() {
