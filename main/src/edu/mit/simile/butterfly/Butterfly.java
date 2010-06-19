@@ -538,6 +538,10 @@ public class Butterfly extends HttpServlet {
 
                 p.addProperty(PATH_PROP, f.getAbsolutePath());
                 
+                if (p.containsKey("name")) {
+                    name = p.getString("name");
+                }
+                
                 _moduleProperties.put(name, p);
             } catch (Exception e) {
                 _logger.error("Error finding module wirings", e);
