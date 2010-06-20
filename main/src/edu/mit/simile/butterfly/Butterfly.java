@@ -403,20 +403,42 @@ public class Butterfly extends HttpServlet {
         _logger.info("< configure modules");
                 
         _logger.info("> initialize modules");
-        for (ButterflyModule m : _modulesByName.values()) {
-            try {
-                _logger.debug("> initialize " + m.getName());
-                m.init(getServletConfig());
-                _logger.debug("< initialize " + m.getName());
-            } catch (Exception e) {
-                _configurationException = new Exception("Failed to initialize module " + m, e);
-            }
+        Set<String> initialized = new HashSet<String>();
+        Set<String> initializing = new HashSet<String>();
+        for (String name : _modulesByName.keySet()) {
+            initializeModule(name, initialized, initializing);
         }
         _logger.info("< initialize modules");
         
         _configured = true;
         
         _logger.debug("< configure");
+    }
+    
+    protected void initializeModule(String name, Set<String> initialized, Set<String> initializing) {
+        ButterflyModule m = _modulesByName.get(name);
+        if (m != null && !initialized.contains(name)) {
+            _logger.debug("> initialize " + m.getName());
+            
+            if (initializing.contains(name)) {
+                _logger.warn("Circular dependencies detected involving module " + m);
+            } else {
+                initializing.add(name);
+                for (String depends : m.getDependencies().keySet()) {
+                    initializeModule(depends, initialized, initializing);
+                }
+                initializing.remove(name);
+            }
+            
+            try {
+                m.init(getServletConfig());
+            } catch (Exception e) {
+                _configurationException = new Exception("Failed to initialize module " + m, e);
+            }
+            
+            _logger.debug("< initialize " + m.getName());
+            initialized.add(name);
+        }
     }
     
     @Override
