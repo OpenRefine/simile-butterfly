@@ -179,6 +179,10 @@ public class ScriptableButterfly extends ButterflyScriptableObject {
         return _module.getMountPoint();
     }
     
+    public ButterflyMounter jsFunction_getMounter() throws Exception {
+        return _module.getMounter();
+    }
+    
     public String jsFunction_getProperty(String key, String defaultValue) throws Exception {
     	return _properties.getString(key, defaultValue);
     }

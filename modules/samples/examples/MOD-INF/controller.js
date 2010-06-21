@@ -45,6 +45,16 @@ function process(path, request, response) {
 
 	} else if (path == "" || path.charAt(path.length) == "/") {
 	    send(request, response, "Some Butterfly Examples", path + "index.vt", context);
+	    
+	} else if (path == "wirings.js") {
+	    var wirings = butterfly.getWirings(request);
+	    butterfly.sendString(
+	        request, 
+	        response, 
+	        "var wirings = " + butterfly.toJSONString(wirings) + ";", 
+	        encoding, 
+	        "text/javascript"
+	    );
 	}
 }
 

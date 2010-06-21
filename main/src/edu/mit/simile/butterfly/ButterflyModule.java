@@ -82,7 +82,9 @@ public interface ButterflyModule {
     public File getPath();
     
     public MountPoint getMountPoint();
-
+    
+    public ButterflyMounter getMounter();
+    
     public File getTemporaryDir();
 
     public ButterflyModule getModule(String name);

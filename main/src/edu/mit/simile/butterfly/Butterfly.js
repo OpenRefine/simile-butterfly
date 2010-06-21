@@ -31,6 +31,21 @@ Butterfly.prototype.getJSON = function(request) {
     return butterfly.parseJSON(this.getString(request));
 }
 
+/*
+ * Return the module path wirings as a JSON object.
+ */
+Butterfly.prototype.getWirings = function(request) {
+    var mounter = this.getMounter();
+    var mountPaths = mounter.getMountPaths().toArray();
+    var result = {};
+    
+    for each (var p in mountPaths) {
+        var m = mounter.getModule(p, null);
+        result[m.getName()] = p;
+    }
+    return result;
+}
+
 // ---------------------------------------------------------------------------------------
 
 Butterfly.prototype.toJSONString = function(o) {

@@ -77,6 +77,10 @@ public class ButterflyMounter {
         }
         return m;
     }
+    
+    public Set<String> getMountPaths() {
+        return modulesByMountPath.keySet();
+    }
 
     // ----------------------------------------------------------------------------
     

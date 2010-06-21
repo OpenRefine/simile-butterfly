@@ -23,5 +23,17 @@
 
 #parse($body)
 
+<script src="wirings.js"></script>
+<h3>Module Wirings</h3>
+<ul id="wirings-list"></ul>
+<script>
+  var ul = document.getElementById("wirings-list");
+  for (var k in wirings) {
+    var li = document.createElement("li");
+    li.innerHTML = k + " &raquo; " + wirings[k];
+    ul.appendChild(li);
+  }
+</script>
+
 </body>
 </html>

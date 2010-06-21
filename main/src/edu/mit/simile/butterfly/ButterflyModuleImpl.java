@@ -215,6 +215,10 @@ public class ButterflyModuleImpl implements ButterflyModule {
     public MountPoint getMountPoint() {
         return this._mountPoint;
     }
+    
+    public ButterflyMounter getMounter() {
+        return this._mounter;
+    }
 
     public ButterflyModule getExtendedModule() {
         return this._extended;
