@@ -48,26 +48,22 @@ public class ButterflyClassLoader extends URLClassLoader {
 
         if (clazz == null) {
             try {
-                _logger.trace("> Loading: {}", name);
+                _logger.trace("Loading: {}", name);
                 clazz = findClass(name);
-                _logger.trace("< Loaded: {}", name);
             } catch (ClassNotFoundException cnfe) {
             	try {
-                    _logger.trace("> Parent loading: {}", name);
+                    _logger.trace("Parent loading: {}", name);
                     ClassLoader parent = getParent();
                     clazz = parent.loadClass(name);
-                    _logger.trace("< Parent loaded: {}", name);
             	} catch (ClassNotFoundException cnfe2) {
             		try {
-	                    _logger.trace("> Current loading: {}", name);
+	                    _logger.trace("Current loading: {}", name);
 	            		ClassLoader current = this.getClass().getClassLoader();
 	            		clazz = current.loadClass(name);
-	                    _logger.trace("< Current loaded: {}", name);
             		} catch (ClassNotFoundException cnfe3) {
-	                    _logger.trace("> System loading: {}", name);
+	                    _logger.trace("System loading: {}", name);
 	            		ClassLoader system = ClassLoader.getSystemClassLoader();
 	            		clazz = system.loadClass(name);
-	                    _logger.trace("< System loaded: {}", name);
             		}
             	}
             }
@@ -108,7 +104,7 @@ public class ButterflyClassLoader extends URLClassLoader {
             _logger.info("Repository {} does not exist", repository);
         }
 
-        _logger.trace("> Processing class repository: {}", repository);
+        _logger.trace("< Processing class repository: {}", repository);
     }
     
     public void watch(File file) {

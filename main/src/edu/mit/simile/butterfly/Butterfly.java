@@ -76,24 +76,13 @@ public class Butterfly extends HttpServlet {
     public static final String DEFAULT_ZONE = "butterfly.default.zone";
 
     public static final String MAIN_ZONE = "main";
-    
-    public static final List<String> CONTROLLER;
-    
-    private static final ContextFactory contextFactory = new ButterflyContextFactory();
+
+    final static List<String> CONTROLLER;
     
     static {
-        ContextFactory.initGlobal(contextFactory);
-        
         CONTROLLER = new ArrayList<String>();
         CONTROLLER.add("controller.js");
     }
-    
-    static class ButterflyContextFactory extends ContextFactory {
-        protected void onContextCreated(Context cx) {
-            cx.setOptimizationLevel(9);
-            super.onContextCreated(cx);
-        }
-    }    
     
     // --------------------- static ----------------------------------
     
@@ -170,6 +159,15 @@ public class Butterfly extends HttpServlet {
 
     protected boolean _configured = false;
 
+    protected ContextFactory contextFactory;
+    
+    class ButterflyContextFactory extends ContextFactory {
+        protected void onContextCreated(Context cx) {
+            cx.setOptimizationLevel(9);
+            super.onContextCreated(cx);
+        }
+    }    
+    
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -240,20 +238,23 @@ public class Butterfly extends HttpServlet {
         if (_appengine) _logger.info("Running in Google App Engine");
 
         _logger.debug("> init");
-
+        
         _logger.debug("> initialize classloader");
         try {
             _classLoader = AccessController.doPrivileged (
                 new PrivilegedAction<ButterflyClassLoader>() {
                     public ButterflyClassLoader run() {
-                        return new ButterflyClassLoader(Thread.currentThread().getContextClassLoader());
+                        return new ButterflyClassLoader(this.getClass().getClassLoader());
                     }
                 }
-             );
+            );
             
             Thread.currentThread().setContextClassLoader(_classLoader);
             _classLoader.watch(butterflyProperties); // reload if the butterfly properties change
+            contextFactory = new ButterflyContextFactory();
             contextFactory.initApplicationClassLoader(_classLoader); // tell rhino to use this classloader as well
+
+            ContextFactory.initGlobal(contextFactory);
             
             if (_autoreload && !_appengine) {
                 _timer = new Timer(true);
