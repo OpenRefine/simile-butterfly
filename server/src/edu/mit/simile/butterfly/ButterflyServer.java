@@ -151,6 +151,7 @@ class ServerImpl extends Server {
 
         scanList.add(new File(contextRoot, "WEB-INF/web.xml"));
         findFiles(".class", new File(contextRoot, "WEB-INF/classes"), scanList);
+        findFiles(".jar", new File(contextRoot, "WEB-INF/lib"), scanList);
 
         logger.info("Starting autoreloading scanner... ");
 

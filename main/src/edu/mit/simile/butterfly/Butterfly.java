@@ -254,7 +254,7 @@ public class Butterfly extends HttpServlet {
             Thread.currentThread().setContextClassLoader(_classLoader);
             _classLoader.watch(butterflyProperties); // reload if the butterfly properties change
             contextFactory.initApplicationClassLoader(_classLoader); // tell rhino to use this classloader as well
-
+            
             if (_autoreload && !_appengine) {
                 _timer = new Timer(true);
                 TimerTask classloaderWatcher = _classLoader.getClassLoaderWatcher(new Trigger(_contextDir));
@@ -984,25 +984,44 @@ public class Butterfly extends HttpServlet {
 
         final static private Logger _logger = LoggerFactory.getLogger("butterfly.trigger");
 
-        private File _context;
+        private List<File> tries = new ArrayList<File>();
         
         Trigger(File context) {
-            _context = context; 
+            File web_inf = new File(context, "WEB-INF");
+            File classes = new File(web_inf, "classes");
+            if (classes.exists()) {
+                tries.add(findFile(classes, ".class"));
+            }
+            File libs = new File(web_inf, "lib");
+            if (libs.exists()) {
+                tries.add(findFile(libs, ".jar"));
+            }
         }
         
         public void run() {
-            _logger.debug("classloader changed trigger invoked");
-            List<File> tries = new ArrayList<File>();
-            tries.add(new File(_context, "WEB-INF/classes/edu/mit/simile/butterfly/Butterfly.class"));
+            _logger.info("classloader changed trigger invoked");
             for (File f : tries) {
-                _logger.debug(" trying: " + f.getAbsolutePath());
+                _logger.debug("trying: " + f.getAbsolutePath());
                 if (f.exists()) {
                     f.setLastModified((new Date()).getTime());
-                    _logger.debug("  touched!!");
+                    _logger.debug(" touched!!");
                     return;
                 }
             }
-            _logger.debug("  but could not find any class to touch!!");
+            _logger.warn("could not find anything to touch");
+        }
+        
+        private File findFile(File start, String extension) {
+            for (File f : start.listFiles()) {
+                if (f.isDirectory()) {
+                    return findFile(f, extension);
+                } else {
+                    if (f.getName().endsWith(extension)) { 
+                        return f;
+                    }
+                }
+            }
+            return null;
         }
     }
 }
