@@ -151,6 +151,10 @@ public class ScriptableButterfly extends ButterflyScriptableObject {
         _logger.trace("< jsFunction_makePath");
         return l;
     }
+    
+    public void jsFunction_responded() {
+        _responded = true;
+    }
 
     public void jsFunction_sendString(Object request, Object response, String str, String encoding, String mimeType) throws Exception {
         _logger.trace("> jsFunction_sendString");
