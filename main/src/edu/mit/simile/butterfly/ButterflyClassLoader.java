@@ -40,11 +40,10 @@ public class ButterflyClassLoader extends URLClassLoader {
         return _watcher;
     }
     
-    @SuppressWarnings("unchecked")
 	@Override
-    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 
-        Class clazz = findLoadedClass(name);
+        Class<?> clazz = findLoadedClass(name);
 
         if (clazz == null) {
             try {

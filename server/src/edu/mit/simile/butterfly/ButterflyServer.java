@@ -161,8 +161,7 @@ class ServerImpl extends Server {
         scanner.setReportExistingFilesOnStartup(false);
 
         scanner.addListener(new Scanner.BulkListener() {
-            @SuppressWarnings("unchecked")
-            public void filesChanged(List changedFiles) {
+            public void filesChanged(@SuppressWarnings("rawtypes") List changedFiles) {
                 try {
                     logger.info("Stopping context: " + contextRoot.getAbsolutePath());
                     context.stop();

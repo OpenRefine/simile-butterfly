@@ -205,6 +205,27 @@ public class Butterfly extends HttpServlet {
             }
         }
 
+        // Process eventual properties includes
+        String includes = _properties.getString("butterfly.includes");
+        if (includes != null) {
+            for (String prop : includes.split(",")) {
+                File prop_file = (prop.startsWith("/")) ? new File(prop) : new File(_webInfDir, prop);
+                try {
+                    is = new BufferedInputStream(new FileInputStream(prop_file));
+                    ExtendedProperties p = new ExtendedProperties();
+                    p.load(is);
+                    _properties.combine(p);
+                } catch (Exception e) {
+                    // ignore 
+                } finally {
+                    try {
+                        is.close();
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            }
+        }
         // Overload with properties set from the command line 
         // using the -Dkey=value parameters to the JVM
         Properties systemProperties = System.getProperties();
@@ -588,7 +609,6 @@ public class Butterfly extends HttpServlet {
         }
     }
 
-    @SuppressWarnings("unchecked")
     protected ButterflyModule createModule(String name) {
         _logger.trace("> Creating module: {}", name);
 
@@ -617,7 +637,7 @@ public class Butterfly extends HttpServlet {
         String manager = p.getString("module-impl");
         if (manager != null && !manager.equals(m.getClass().getName())) {
             try {
-                Class c = _classLoader.loadClass(manager);
+                Class<?> c = _classLoader.loadClass(manager);
                 m = (ButterflyModule) c.newInstance();
             } catch (Exception e) {
                 _logger.error("Error loading special module manager", e);
@@ -833,7 +853,8 @@ public class Butterfly extends HttpServlet {
                         if (!scriptable.equals("")) {
                             try {
                                 _logger.trace("> adding scriptable object: {}", scriptable);
-                                Class c  = _classLoader.loadClass(scriptable);
+                                @SuppressWarnings("rawtypes")
+								Class c  = _classLoader.loadClass(scriptable);
                                 ButterflyScriptableObject o = (ButterflyScriptableObject) c.newInstance();
                                 setScriptable(m, o);
                                 URL initializer = c.getResource("init.js");
