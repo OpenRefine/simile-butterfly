@@ -689,14 +689,16 @@ public class Butterfly extends HttpServlet {
             ButterflyModule m = _modulesByName.get(name);
             String mountPointStr = wirings.getString(m.getName());
             if (mountPointStr == null) {
-                _logger.info("No mount point defined for module '{}', it won't be exposed.", name);
+            	String moduleName = m.getName();
+                _logger.info("No mount point defined for module '" + moduleName + "', mounting to '/" + moduleName + "'");
+            	mountPointStr = moduleName;
+            }
+            
+            MountPoint mountPoint = new MountPoint(mountPointStr);
+            if (_mounter.isRegistered(mountPoint)) {
+                throw new RuntimeException("Cannot have two different modules with the same mount point '" + mountPoint + "'.");
             } else {
-                MountPoint mountPoint = new MountPoint(mountPointStr);
-                if (_mounter.isRegistered(mountPoint)) {
-                    throw new RuntimeException("Cannot have two different modules with the same mount point '" + mountPoint + "'.");
-                } else {
-                    _mounter.register(mountPoint, m);
-                }
+                _mounter.register(mountPoint, m);
             }
             _logger.trace("< Mounting module: {}", name);
         }
