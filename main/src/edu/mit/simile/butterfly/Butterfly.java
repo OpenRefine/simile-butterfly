@@ -74,7 +74,8 @@ public class Butterfly extends HttpServlet {
     public static final String ZONE = "butterfly.zone";
     public static final String BASE_URL = "butterfly.url";
     public static final String DEFAULT_ZONE = "butterfly.default.zone";
-
+    public static final String DEFAULT_MOUNTPOINT = "butterfly.default.mountpoint";
+    
     public static final String MAIN_ZONE = "main";
 
     final static List<String> CONTROLLER;
@@ -143,6 +144,7 @@ public class Butterfly extends HttpServlet {
     private boolean _autoreload;
     private boolean _appengine;
     private String _name;
+    private String _default_mountpoint;
     private int _routingCookieMaxAge;
     
     transient protected Timer _timer;
@@ -175,6 +177,7 @@ public class Butterfly extends HttpServlet {
         _appengine = isGAE(config);
         
         _name = System.getProperty(NAME, "butterfly");
+        _default_mountpoint = System.getProperty(DEFAULT_MOUNTPOINT, "/modules");
 
         _context = config.getServletContext();
         _context.setAttribute(NAME, _name);
@@ -689,9 +692,10 @@ public class Butterfly extends HttpServlet {
             ButterflyModule m = _modulesByName.get(name);
             String mountPointStr = wirings.getString(m.getName());
             if (mountPointStr == null) {
-            	String moduleName = m.getName();
-                _logger.info("No mount point defined for module '" + moduleName + "', mounting to '/" + moduleName + "'");
-            	mountPointStr = moduleName;
+            	String moduleName = m.getName(); 
+            	String mountPoint = _default_mountpoint + "/" + m.getName();
+                _logger.info("No mount point defined for module '" + moduleName + "', mounting to '" + mountPoint + "'");
+            	mountPointStr = mountPoint;
             }
             
             MountPoint mountPoint = new MountPoint(mountPointStr);
