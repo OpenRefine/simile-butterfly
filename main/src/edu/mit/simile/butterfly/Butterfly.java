@@ -177,7 +177,6 @@ public class Butterfly extends HttpServlet {
         _appengine = isGAE(config);
         
         _name = System.getProperty(NAME, "butterfly");
-        _default_mountpoint = System.getProperty(DEFAULT_MOUNTPOINT, "/modules");
 
         _context = config.getServletContext();
         _context.setAttribute(NAME, _name);
@@ -238,6 +237,8 @@ public class Butterfly extends HttpServlet {
             _properties.setProperty(key, value);
         }
 
+        _default_mountpoint = _properties.getString(DEFAULT_MOUNTPOINT, "/modules");
+        
         _autoreload = _properties.getBoolean(AUTORELOAD, false);
         
         if (!_appengine) {
