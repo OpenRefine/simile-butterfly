@@ -75,6 +75,7 @@ public class Butterfly extends HttpServlet {
     public static final String BASE_URL = "butterfly.url";
     public static final String DEFAULT_ZONE = "butterfly.default.zone";
     public static final String DEFAULT_MOUNTPOINT = "butterfly.default.mountpoint";
+    public static final String MODULES_IGNORE = "butterfly.modules.ignore";
     
     public static final String MAIN_ZONE = "main";
 
@@ -146,6 +147,8 @@ public class Butterfly extends HttpServlet {
     private String _name;
     private String _default_mountpoint;
     private int _routingCookieMaxAge;
+    
+    private String[] _ignores;
     
     transient protected Timer _timer;
     transient protected ButterflyClassLoader _classLoader;
@@ -238,6 +241,7 @@ public class Butterfly extends HttpServlet {
         }
 
         _default_mountpoint = _properties.getString(DEFAULT_MOUNTPOINT, "/modules");
+        _ignores = _properties.getString(MODULES_IGNORE, "").split(",");
         
         _autoreload = _properties.getBoolean(AUTORELOAD, false);
         
@@ -590,7 +594,18 @@ public class Butterfly extends HttpServlet {
                     name = p.getString("name");
                 }
                 
-                _moduleProperties.put(name, p);
+                boolean load = true;
+                
+                for (String s : _ignores) {
+                    if (name.matches(s)) {
+                        load = false;
+                        break;
+                    }
+                }
+                
+                if (load) {
+                    _moduleProperties.put(name, p);
+                }
             } catch (Exception e) {
                 _logger.error("Error finding module wirings", e);
             }
