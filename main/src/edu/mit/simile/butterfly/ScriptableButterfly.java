@@ -234,7 +234,7 @@ public class ScriptableButterfly extends ButterflyScriptableObject {
                         value = Integer.valueOf(((Double) value).intValue());
                     }
                     context.put(name, value);
-                    if (_logger.isDebugEnabled()) _logger.trace(name + " -> " + value + " [" + value.getClass().getName() + "]");
+                    if (_logger.isDebugEnabled()) _logger.trace(name + " -> " + value + " [" + ((value != null) ? value.getClass().getName() : "null") + "]");
                 }
             }
         }
