@@ -76,6 +76,7 @@ public class Butterfly extends HttpServlet {
     public static final String DEFAULT_ZONE = "butterfly.default.zone";
     public static final String DEFAULT_MOUNTPOINT = "butterfly.default.mountpoint";
     public static final String MODULES_IGNORE = "butterfly.modules.ignore";
+    public static final String MODULES_PATH = "butterfly.modules.path";
     
     public static final String MAIN_ZONE = "main";
 
@@ -153,6 +154,7 @@ public class Butterfly extends HttpServlet {
     transient protected Timer _timer;
     transient protected ButterflyClassLoader _classLoader;
     transient protected ButterflyScriptWatcher _scriptWatcher;
+    transient protected ServletConfig _config;
     transient protected ServletContext _context;
     transient protected ButterflyMounter _mounter;
 
@@ -176,6 +178,7 @@ public class Butterfly extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        _config = config;
 
         _appengine = isGAE(config);
         
@@ -389,9 +392,18 @@ public class Butterfly extends HttpServlet {
         _logger.info("< process properties");
 
         _logger.info("> load modules");
-        List<String> paths = _properties.getList("butterfly.modules.path");
+        // load modules from the properties found in the butterfly.properties
+        List<String> paths = _properties.getList(MODULES_PATH);
         for (String path : paths) {
-            findModulesIn(absolutize(_homeDir, path));
+            findModulesIn(absolutize(_homeDir, path.trim()));
+        }
+
+        // load modules from the path found in the servlet init properties
+        String servlet_paths = this._config.getInitParameter(MODULES_PATH);
+        if (servlet_paths != null) {
+            for (String path : servlet_paths.split(",")) {
+                findModulesIn(absolutize(_homeDir, path.trim()));
+            }
         }
         _logger.info("< load modules");
         
