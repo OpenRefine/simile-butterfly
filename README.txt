@@ -57,6 +57,16 @@
    
 
 
+  What's with the Maven poms?
+  ---------------------------
+  
+  They're there so the Butterfly engine can be published in
+  Maven Central.  They're not useful for you unless you're
+  involved in the Maven deployment process and have no bearing
+  on the build process.  You can safely ignore them.
+   
+
+
   Licensing and legal issues
   --------------------------
 
