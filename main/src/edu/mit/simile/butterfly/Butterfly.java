@@ -492,9 +492,9 @@ public class Butterfly extends HttpServlet {
 
         if (_mounter != null) {
             Zone zone = _mounter.getZone(request);
-            
+
             if (_logger.isDebugEnabled()) {
-                _logger.debug("> " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
+                _logger.debug("> " + method + " [" + ((zone != null) ? zone.getName() : "") + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
                 Enumeration<String> en = request.getHeaderNames();
                 while (en.hasMoreElements()) {
                     String header = en.nextElement();
@@ -529,7 +529,7 @@ public class Butterfly extends HttpServlet {
             }
     
             response.flushBuffer();
-            if (_logger.isDebugEnabled()) _logger.debug("< " + method + " [" + zone.getName() + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
+            if (_logger.isDebugEnabled()) _logger.debug("< " + method + " [" + ((zone != null) ? zone.getName() : "") + "] " + path + ((urlQuery != null) ? "?" + urlQuery : ""));
 
         } else {
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
