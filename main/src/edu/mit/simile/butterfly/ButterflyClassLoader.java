@@ -161,22 +161,26 @@ class ButterflyClassLoaderWatcher extends TimerTask {
     }
     
     public void run() {
-        int counter = 0;
-        
-        synchronized(this) {
-            for (File f : this.files) {
-                if (f.lastModified() > this.lastModifieds.get(f).longValue()) {
-                	_logger.debug(f + " has changed");
-                    this.lastModifieds.put(f, Long.valueOf(f.lastModified()));
-                    counter++;
+        try {
+            int counter = 0;
+
+            synchronized(this) {
+                for (File f : this.files) {
+                    if (f.lastModified() > this.lastModifieds.get(f).longValue()) {
+                        _logger.debug(f + " has changed");
+                        this.lastModifieds.put(f, Long.valueOf(f.lastModified()));
+                        counter++;
+                    }
                 }
             }
-        }
-        
-        if (counter > 0) {
-            _logger.debug("Classloading space has changed. Triggering the signal...");
-            this.trigger.run();
-            _logger.debug("..done");
+
+            if (counter > 0) {
+                _logger.debug("Classloading space has changed. Triggering the signal...");
+                this.trigger.run();
+                _logger.debug("..done");
+            }
+        } catch (final Exception e) {
+            _logger.error("Error in ButterflyClassLoaderWatcher",e);
         }
     }
 }
