@@ -1096,8 +1096,10 @@ class ButterflyScriptWatcher extends TimerTask {
     }
     
     public void run() {
-        for (URL url : this.scripts.keySet()) {
-            try {
+        try {
+            // Make a copy of the set to protect against changes
+            List<URL> urls = new ArrayList<URL>(this.scripts.keySet());
+            for (URL url : urls) {
                 URLConnection connection = url.openConnection();
                 long lastModified = connection.getLastModified(); 
                 if (lastModified > this.lastModifieds.get(url)) {
@@ -1116,9 +1118,9 @@ class ButterflyScriptWatcher extends TimerTask {
                     }
                 }
                 connection.getInputStream().close(); // NOTE(SM): this avoids leaking file descriptions in some JVMs
-            } catch (Exception e) {
-                _logger.error("", e);
             }
+        } catch (Exception e) {
+            _logger.error("", e);
         }
     }
 }
