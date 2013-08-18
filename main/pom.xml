@@ -29,6 +29,16 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>tests/src</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src/edu/mit/simile/butterfly</directory>
+        <targetPath>edu/mit/simile/butterfly</targetPath>
+        <filtering>false</filtering>
+        <includes>
+          <include>Butterfly.js</include>
+        </includes>
+      </resource>
+    </resources>
   </build>
 
   <dependencies>
