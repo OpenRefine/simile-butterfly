@@ -40,6 +40,7 @@ public class ButterflyClassLoader extends URLClassLoader {
         return _watcher;
     }
     
+    /*
 	@Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 
@@ -74,6 +75,7 @@ public class ButterflyClassLoader extends URLClassLoader {
 
         return clazz;
     }
+    */
 
     public void addRepository(File repository) {
     	_logger.trace("> Processing class repository: {}", repository);
