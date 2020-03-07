@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>edu.mit.simile</groupId>
+    <groupId>org.openrefine.dependencies</groupId>
     <artifactId>butterfly-container</artifactId>
     <version>1.0.2</version>
   </parent>
   
-  <groupId>edu.mit.simile</groupId>
+  <groupId>org.openrefine.dependencies</groupId>
   <artifactId>butterfly</artifactId>
   <version>1.0.2</version>
 

@@ -10,14 +10,14 @@
     <version>7</version>
   </parent>
 
-  <groupId>edu.mit.simile</groupId>
+  <groupId>org.openrefine.dependencies</groupId>
   <artifactId>butterfly-container</artifactId>
   <version>1.0.2</version>
   <packaging>pom</packaging>
 
   <name>SIMILE Butterfly</name>
   <description>Butterfly is a modular web application framework</description>
-  <url>https://code.google.com/p/simile-butterfly/</url>
+  <url>https://github.com/OpenRefine/simile-butterfly</url>
   <inceptionYear>2007</inceptionYear>
 
   <licenses>
@@ -27,6 +27,17 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <distributionManagement>
+    <snapshotRepository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <developers>
     <developer>
@@ -48,9 +59,9 @@
   </modules>
 
   <scm>
-    <connection>scm:svn:http://simile-butterfly.googlecode.com/svn/trunk/</connection>
-    <developerConnection>scm:svn:https://simile-butterfly.googlecode.com/svn/trunk/</developerConnection>
-    <url>http://simile-butterfly.googlecode.com/svn/trunk/</url>
+    <connection>scm:git:https://github.com/OpenRefine/simile-butterfly.git</connection>
+    <developerConnection>scm:git:https://github.com/OpenRefine/simile-butterfly.git</developerConnection>
+    <url>https://github.com/OpenRefine/simile-butterfly</url>
   </scm>
 
   <issueManagement>
@@ -65,8 +76,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -78,7 +89,7 @@
           <execution>
             <id>attach-sources</id>
             <goals>
-              <goal>jar</goal>
+              <goal>jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
@@ -91,6 +102,37 @@
           <downloadSources>true</downloadSources>
         </configuration>
       </plugin>
+     <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-javadoc-plugin</artifactId>
+      <version>3.1.1</version>
+      <configuration>
+        <javadocExecutable>/usr/bin/javadoc</javadocExecutable>
+        <source>8</source>
+      </configuration>
+      <executions>
+        <execution>
+          <id>attach-javadocs</id>
+          <goals>
+            <goal>jar</goal>
+          </goals>
+        </execution>
+      </executions>
+     </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-gpg-plugin</artifactId>
+      <version>1.5</version>
+      <executions>
+        <execution>
+          <id>sign-artifacts</id>
+          <phase>verify</phase>
+          <goals>
+            <goal>sign</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
     </plugins>
   </build>
 
