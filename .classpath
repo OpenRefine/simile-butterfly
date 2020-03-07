@@ -20,13 +20,19 @@
 	<classpathentry kind="lib" path="main/webapp/WEB-INF/lib/tracer-1.0.jar"/>
 	<classpathentry kind="lib" path="main/webapp/WEB-INF/lib/velocity-1.6.3.jar"/>
 	<classpathentry kind="lib" path="main/webapp/WEB-INF/lib/lessen-trunk-r8.jar"/>
-	<classpathentry kind="lib" path="server/lib/jetty-6.1.22.jar"/>
-	<classpathentry kind="lib" path="server/lib/jetty-util-6.1.22.jar"/>
 	<classpathentry kind="lib" path="server/lib/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="server/lib/servlet-api-2.5.jar"/>
 	<classpathentry kind="lib" path="server/lib/slf4j-api-1.5.6.jar"/>
 	<classpathentry kind="lib" path="server/lib/slf4j-log4j12-1.5.6.jar"/>
 	<classpathentry kind="lib" path="server/lib/tracer-1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="server/lib/jetty-client-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-security-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-util-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-webapp-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-server-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-http-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-io-9.4.26.v20200117.jar"/>
+	<classpathentry kind="lib" path="server/lib/jetty-servlet-9.4.26.v20200117.jar"/>
 	<classpathentry kind="output" path="server/classes"/>
 </classpath>

@@ -6,19 +6,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Level;
-import org.mortbay.component.LifeCycle;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.webapp.WebAppContext;
-import org.mortbay.log.Log;
-import org.mortbay.thread.ThreadPool;
-import org.mortbay.util.Scanner;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.StatisticsHandler;
+import org.eclipse.jetty.util.Scanner;
+import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.util.thread.ThreadPool;
+import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ public class ButterflyServer {
         
         // tell jetty to use SLF4J for logging instead of its own stuff
         System.setProperty("VERBOSE","false");
-        System.setProperty("org.mortbay.log.class","org.mortbay.log.Slf4jLog");
+        System.setProperty("org.eclipse.jetty.util.log.class","org.eclipse.jetty.util.log.Slf4jLog");
         
         port = Configurations.getInteger("server.port",DEFAULT_PORT);
         host = Configurations.get("server.host",DEFAULT_HOST);
@@ -66,6 +66,19 @@ public class ButterflyServer {
 class ServerImpl extends Server {
     
     final static Logger logger = LoggerFactory.getLogger("server");
+    
+    public ServerImpl() {
+        super(createThreadPool());
+    }
+    
+    private static ThreadPool createThreadPool() {
+        int maxThreads = Configurations.getInteger("server.queue.size", 30);
+        int queueSize = Configurations.getInteger("server.queue.max_size", 300);
+        long keepAliveTime = Configurations.getInteger("server.queue.idle_time", 60);
+        return new ThreadPoolExecutorAdapter(
+                new ThreadPoolExecutor(maxThreads, queueSize, keepAliveTime, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<Runnable>(queueSize)));
+    }
         
     private ThreadPoolExecutor threadPool;
     
@@ -75,21 +88,13 @@ class ServerImpl extends Server {
         String memory = Configurations.get("server.memory");
         if (memory != null) logger.info("Max memory size: " + memory);
         
-        int maxThreads = Configurations.getInteger("server.queue.size", 30);
-        int maxQueue = Configurations.getInteger("server.queue.max_size", 300);
-        long keepAliveTime = Configurations.getInteger("server.queue.idle_time", 60);
-
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(maxQueue);
-        
-        threadPool = new ThreadPoolExecutor(maxThreads, maxQueue, keepAliveTime, TimeUnit.SECONDS, queue);
-
-        this.setThreadPool(new ThreadPoolExecutorAdapter(threadPool));
-        
-        Connector connector = new SocketConnector();
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setSendServerVersion(false);
+        HttpConnectionFactory httpFactory = new HttpConnectionFactory(httpConfig);
+        ServerConnector connector = new ServerConnector(this, httpFactory);
         connector.setPort(port);
         connector.setHost(host);
-        connector.setMaxIdleTime(Configurations.getInteger("server.connection.max_idle_time",60000));
-        connector.setStatsOn(false);
+        connector.setIdleTimeout(Configurations.getInteger("server.connection.max_idle_time",60000));
         this.addConnector(connector);
 
         File webapp = new File(Configurations.get("server.webapp","engine/webapp"));
@@ -109,11 +114,20 @@ class ServerImpl extends Server {
         
         logger.info("Initializing context: '" + contextPath + "' from '" + webapp.getAbsolutePath() + "'");
         WebAppContext context = new WebAppContext(webapp.getAbsolutePath(), contextPath);
-        context.setMaxFormContentSize(1048576);
+        context.setMaxFormContentSize(10048576);
 
         this.setHandler(context);
         this.setStopAtShutdown(true);
-        this.setSendServerVersion(true);
+        StatisticsHandler handler = new StatisticsHandler();
+        handler.setHandler(this.getHandler());
+        this.addBean(handler);
+        // Tell the server we want to try and shutdown gracefully
+        // this means that the server will stop accepting new connections
+        // right away but it will continue to process the ones that
+        // are in execution for the given timeout before attempting to stop
+        // NOTE: this is *not* a blocking method, it just sets a parameter
+        //       that _server.stop() will rely on
+        handler.setStopTimeout(3000);
 
         // Enable context autoreloading
         if (Configurations.getBoolean("server.autoreload",false)) {
@@ -146,7 +160,7 @@ class ServerImpl extends Server {
         return webXml.exists() && webXml.canRead();
     }
     
-    static private void scanForUpdates(final File contextRoot, final WebAppContext context) {
+    static private void scanForUpdates(final File contextRoot, final WebAppContext context) throws Exception {
         List<File> scanList = new ArrayList<File>();
 
         scanList.add(new File(contextRoot, "WEB-INF/web.xml"));
@@ -248,15 +262,6 @@ class ShutdownSignalHandler implements Runnable {
     }
 
     public void run() {
-
-        // Tell the server we want to try and shutdown gracefully
-        // this means that the server will stop accepting new connections
-        // right away but it will continue to process the ones that
-        // are in execution for the given timeout before attempting to stop
-        // NOTE: this is *not* a blocking method, it just sets a parameter
-        //       that _server.stop() will rely on
-        _server.setGracefulShutdown(3000);
-
         try {
             _server.stop();
         } catch (Exception e) {
@@ -275,14 +280,9 @@ class ThreadPoolExecutorAdapter implements ThreadPool, LifeCycle {
         this.executor = executor;
     }
 
-    public boolean dispatch(Runnable job) {
-        try {
-            executor.execute(job);
-            return true;
-        } catch (RejectedExecutionException e) {
-            Log.warn(e);
-            return false;
-        }
+    @Override
+    public void execute(Runnable job) {
+        executor.execute(job);
     }
 
     public int getIdleThreads() {
