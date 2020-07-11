@@ -12,7 +12,7 @@
 
   <groupId>org.openrefine.dependencies</groupId>
   <artifactId>butterfly-container</artifactId>
-  <version>1.0.3</version>
+  <version>1.0.4</version>
   <packaging>pom</packaging>
 
   <name>SIMILE Butterfly</name>
@@ -65,8 +65,8 @@
   </scm>
 
   <issueManagement>
-    <system>Google Code</system>
-    <url>https://code.google.com/p/simile-butterfly/issues/list</url>
+    <system>Github</system>
+    <url>https://github.com/OpenRefine/simile-butterfly/issues</url>
   </issueManagement>
 
   <build>

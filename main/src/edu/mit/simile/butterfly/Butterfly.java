@@ -475,7 +475,9 @@ public class Butterfly extends HttpServlet {
             try {
                 m.init(getServletConfig());
             } catch (Exception e) {
-                _configurationException = new Exception("Failed to initialize module " + m, e);
+                _configurationException = new Exception("Failed to initialize module: " + m, e);
+            } catch (NoClassDefFoundError e) {
+                _configurationException = new Exception("Failed to initialize module (missing Java class definition): " + m, e);
             }
             
             _logger.debug("< initialize " + m.getName());
@@ -888,7 +890,7 @@ public class Butterfly extends HttpServlet {
                             try {
                                 _logger.trace("> adding scriptable object: {}", scriptable);
                                 @SuppressWarnings("rawtypes")
-								Class c  = _classLoader.loadClass(scriptable);
+                                Class c  = _classLoader.loadClass(scriptable);
                                 ButterflyScriptableObject o = (ButterflyScriptableObject) c.newInstance();
                                 setScriptable(m, o);
                                 URL initializer = c.getResource("init.js");
