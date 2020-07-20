@@ -65,8 +65,8 @@
   </scm>
 
   <issueManagement>
-    <system>Google Code</system>
-    <url>https://code.google.com/p/simile-butterfly/issues/list</url>
+    <system>GitHub</system>
+    <url>https://github.com/OpenRefine/simile-butterfly/issues</url>
   </issueManagement>
 
   <build>
