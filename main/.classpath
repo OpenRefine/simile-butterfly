@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" output="target/classes" path="src">
+	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
 		<attributes>
 			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
@@ -13,23 +13,11 @@
 			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/butterfly server/lib/servlet-api-2.5.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/slf4j-api-1.5.6.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/slf4j-log4j12-1.5.6.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/log4j-1.2.15.jar"/>
-	<classpathentry kind="lib" path="tests/lib/mockito-all-1.8.4.jar"/>
-	<classpathentry kind="lib" path="tests/lib/testng-5.12.1.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/rhino-1.7R2.jar" sourcepath="webapp/WEB-INF/lib-src/rhino-1.7R2-sources.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/tracer-1.0.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/commons-collections-3.2.1.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/commons-io-1.4.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/velocity-1.6.3.jar"/>
-	<classpathentry kind="lib" path="webapp/WEB-INF/lib/lessen-trunk-r8.jar"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
