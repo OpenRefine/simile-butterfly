@@ -88,9 +88,9 @@
       <version>1.6.3</version>
     </dependency>
     <dependency>
-      <groupId>rhino</groupId>
-      <artifactId>js</artifactId>
-      <version>1.7R2</version>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
+      <version>1.7.13</version>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
