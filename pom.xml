@@ -58,6 +58,10 @@
     <module>main</module>
   </modules>
 
+  <properties>
+    <log4j.version>2.17.0</log4j.version>
+  </properties>
+
   <scm>
     <connection>scm:git:https://github.com/OpenRefine/simile-butterfly.git</connection>
     <developerConnection>scm:git:https://github.com/OpenRefine/simile-butterfly.git</developerConnection>
