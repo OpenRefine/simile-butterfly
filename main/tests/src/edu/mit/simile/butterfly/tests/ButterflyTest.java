@@ -14,11 +14,6 @@ public class ButterflyTest {
 
     transient protected Logger logger;
 
-    @BeforeSuite
-    public void init() {
-        System.setProperty("log4j.configuration", "tests.log4j.properties");
-    }
-            
     protected HttpServletRequest getRequest(String scheme, String host, String requestURI, String pathInfo, String originalHost, String originalContext) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getScheme()).thenReturn(scheme);
