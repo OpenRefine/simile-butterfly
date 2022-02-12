@@ -342,7 +342,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     
     // ------------------------------------------------------------------------------------------------
     
-    protected Pattern images_pattern = Pattern.compile("^/?.*\\.(jpg|gif|png)$");
+    protected Pattern images_pattern = Pattern.compile("^/?.*\\.(jpg|gif|png|svg)$");
     protected Pattern mod_inf_pattern = Pattern.compile("^.*/MOD-INF/.*$");
 
     protected String encoding = "UTF-8";
