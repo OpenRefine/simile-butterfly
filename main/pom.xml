@@ -7,12 +7,12 @@
   <parent>
     <groupId>org.openrefine.dependencies</groupId>
     <artifactId>butterfly-container</artifactId>
-    <version>1.2.4-SNAPSHOT</version>
+    <version>1.2.4</version>
   </parent>
   
   <groupId>org.openrefine.dependencies</groupId>
   <artifactId>butterfly</artifactId>
-  <version>1.2.4-SNAPSHOT</version>
+  <version>1.2.4</version>
 
   <name>SIMILE Butterfly Engine</name>
   <url>https://github.com/OpenRefine/simile-butterfly/</url>
