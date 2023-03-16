@@ -12,7 +12,7 @@
 
   <groupId>org.openrefine.dependencies</groupId>
   <artifactId>butterfly-container</artifactId>
-  <version>1.2.5</version>
+  <version>1.2.6-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SIMILE Butterfly</name>
