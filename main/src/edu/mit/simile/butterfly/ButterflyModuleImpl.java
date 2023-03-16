@@ -342,7 +342,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     
     // ------------------------------------------------------------------------------------------------
     
-    protected Pattern images_pattern = Pattern.compile("^/?.*\\.(jpg|gif|png|svg)$");
+    protected Pattern images_pattern = Pattern.compile("^/?.*\\.(jpg|gif|png)$");
     protected Pattern mod_inf_pattern = Pattern.compile("^.*/MOD-INF/.*$");
 
     protected String encoding = "UTF-8";
@@ -457,6 +457,10 @@ public class ButterflyModuleImpl implements ButterflyModule {
 
         if (path.endsWith(".xml")) {
             return sendText(request, response, path, encoding, "application/xml",false);
+        }
+
+        if (path.endsWith(".svg"))  {
+            return sendText(request, response, path, encoding, "image/svg+xml",false);
         }
                 
         m = mod_inf_pattern.matcher(path);
