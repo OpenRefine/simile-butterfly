@@ -1,10 +1,13 @@
 package edu.mit.simile.butterfly.velocity;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.collections.ExtendedProperties;
+import org.apache.velocity.util.ExtProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -26,7 +29,7 @@ public class ButterflyResourceLoader extends FileResourceLoader {
     private ButterflyModule _module;
     
     @Override
-    public void commonInit(RuntimeServices rs, ExtendedProperties configuration) {
+    public void commonInit(RuntimeServices rs, ExtProperties configuration) {
         super.commonInit(rs, configuration);
         Object o = rs.getApplicationAttribute("module");
         if (o != null) {
@@ -37,8 +40,8 @@ public class ButterflyResourceLoader extends FileResourceLoader {
     }
 
     @Override
-    public synchronized InputStream getResourceStream(String name) throws ResourceNotFoundException {
-        InputStream result = null;
+    public synchronized Reader getResourceReader(String name, String encoding) throws ResourceNotFoundException {
+        InputStream inputStream = null;
         
         if (name == null || name.length() == 0) {
             throw new ResourceNotFoundException ("No template name provided");
@@ -47,7 +50,7 @@ public class ButterflyResourceLoader extends FileResourceLoader {
         URL url = getResource(name);
         if (url != null) {
             try {
-                result = url.openStream();
+                inputStream = url.openStream();
             } catch (Exception e) {
                 _logger.error("Error opening stream", e);
                 throw new ResourceNotFoundException(e.getMessage());
@@ -56,7 +59,7 @@ public class ButterflyResourceLoader extends FileResourceLoader {
             throw new ResourceNotFoundException("Resource '" + name + "' count not be found");
         }
         
-        return result;
+        return new InputStreamReader(inputStream, StandardCharsets.UTF_8);
     }
     
     @Override

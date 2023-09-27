@@ -198,7 +198,7 @@ public class Butterfly extends HttpServlet {
 
         BufferedInputStream is = null;
         try {
-            is = new BufferedInputStream(new FileInputStream(butterflyProperties)); 
+            is = new BufferedInputStream(new FileInputStream(butterflyProperties));
             _properties.load(is);
         } catch (FileNotFoundException e) {
             throw new ServletException("Could not find butterfly properties file",e);
@@ -223,7 +223,7 @@ public class Butterfly extends HttpServlet {
                     p.load(is);
                     _properties.combine(p);
                 } catch (Exception e) {
-                    // ignore 
+                    // ignore
                 } finally {
                     try {
                         is.close();
@@ -244,7 +244,7 @@ public class Butterfly extends HttpServlet {
 
         _default_mountpoint = _properties.getString(DEFAULT_MOUNTPOINT, "/modules");
         _ignores = _properties.getString(MODULES_IGNORE, "").split(",");
-        
+
         _autoreload = _properties.getBoolean(AUTORELOAD, false);
         
         _logger = LoggerFactory.getLogger(_name);
@@ -317,7 +317,7 @@ public class Butterfly extends HttpServlet {
         
         _logger.info("done.");
     }
-    
+
     @SuppressWarnings("unchecked")
     public void configure() {
         _logger.debug("> configure");
@@ -812,7 +812,7 @@ public class Butterfly extends HttpServlet {
         
         _logger.trace("< wireModules()");
     }    
-        
+
     @SuppressWarnings("unchecked")
     protected void configureModules() {
         _logger.trace("> configureModules()");
@@ -836,28 +836,29 @@ public class Butterfly extends HttpServlet {
                     fis.close();
         
                     // set properties for resource loading
-                    properties.setProperty("resource.loader", "butterfly");
-                    properties.setProperty("butterfly.resource.loader.class", ButterflyResourceLoader.class.getName());
-                    properties.setProperty("butterfly.resource.loader.cache", "true");
-                    properties.setProperty("butterfly.resource.loader.modificationCheckInterval", "1");
-                    properties.setProperty("butterfly.resource.loader.description", "Butterfly Resource Loader");
+                    properties.setProperty("resource.loaders", "butterfly");
+                    properties.setProperty("resource.loader.butterfly.class", ButterflyResourceLoader.class.getName());
+                    properties.setProperty("resource.loader.butterfly.cache", "true");
+                    properties.setProperty("resource.loader.butterfly.modification_check_interval", "1");
+                    properties.setProperty("resource.loader.butterfly.description", "Butterfly Resource Loader");
                         
                     // set properties for macros
-                    properties.setProperty("velocimacro.library", p.getString("templating.macros", ""));
+                    properties.setProperty("velocimacro.library.path", p.getString("templating.macros", ""));
         
                     // Set our special parent injection directive
-                    properties.setProperty("userdirective", Super.class.getName());
+                    properties.setProperty("runtime.custom_directives", Super.class.getName());
         
                     // Set logging properties
                     if (_appengine) {
-                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.JdkLogChute");
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_NAME, "org.apache.velocity.runtime.log.JdkLogChute");
                     } else {
-                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_NAME, "org.apache.velocity.runtime.log.Log4JLogChute");
                         properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
                     }
 
                     // create a module-specific velocity engine
                     VelocityEngine velocity = new VelocityEngine();
+                    velocity.setProperties(properties);
                     velocity.setApplicationAttribute("module", m); // this is how we pass the module to the resource loader
                     velocity.init(properties);
                     
@@ -870,7 +871,7 @@ public class Butterfly extends HttpServlet {
                 if (scriptables.size() > 0) {
                     Context context = Context.enter();
 
-                    BufferedReader initializerReader = null; 
+                    BufferedReader initializerReader = null;
 
                     for (String scriptable : scriptables) {
                         if (!scriptable.equals("")) {
@@ -913,8 +914,8 @@ public class Butterfly extends HttpServlet {
                     
                     Context context = Context.enter();
 
-                    BufferedReader initializerReader = null; 
-                    
+                    BufferedReader initializerReader = null;
+
                     try {
                         URL initializer = this.getClass().getClassLoader().getResource("edu/mit/simile/butterfly/Butterfly.js");
                         initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()));
@@ -924,7 +925,7 @@ public class Butterfly extends HttpServlet {
                     } finally {
                         if (initializerReader != null) initializerReader.close();
                     }
-                    
+
                     BufferedReader controllerReader = null;
 
                     for (URL controllerURL : controllerURLs) {
