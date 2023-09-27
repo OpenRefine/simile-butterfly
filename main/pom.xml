@@ -7,11 +7,11 @@
   <parent>
     <groupId>org.openrefine.dependencies</groupId>
     <artifactId>butterfly-container</artifactId>
-    <version>1.2.6-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>butterfly</artifactId>
-  <version>1.2.6-SNAPSHOT</version>
+  <version>2.0.0-SNAPSHOT</version>
 
   <name>SIMILE Butterfly Engine</name>
   <url>https://github.com/OpenRefine/simile-butterfly/</url>
@@ -92,9 +92,9 @@
       <version>1.7.14</version>
     </dependency>
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>4.0.1</version>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>5.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.metaweb</groupId>

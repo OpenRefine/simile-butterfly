@@ -35,13 +35,13 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
@@ -461,7 +461,7 @@ public class Butterfly extends HttpServlet {
     }
     
     @Override
-    public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String method = request.getMethod();
         String path = request.getPathInfo();
         String urlQuery = request.getQueryString();
@@ -850,7 +850,7 @@ public class Butterfly extends HttpServlet {
                 }
 
                 List<String> scriptables = p.getList(String.class, "scriptables");
-                if (!scriptables.isEmpty()) {
+                if (scriptables != null && !scriptables.isEmpty()) {
                     Context context = Context.enter();
 
                     for (String scriptable : scriptables) {
