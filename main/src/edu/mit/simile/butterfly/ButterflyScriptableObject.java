@@ -1,6 +1,6 @@
 package edu.mit.simile.butterfly;
 
-import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
@@ -16,7 +16,7 @@ public abstract class ButterflyScriptableObject extends ScriptableObject {
     private static final long serialVersionUID = 6392807122149170350L;
 
     protected ButterflyModule _module;
-    protected ExtendedProperties _properties;
+    protected PropertiesConfiguration _properties;
 
     public void init(ButterflyModule module) {
         _module = module;

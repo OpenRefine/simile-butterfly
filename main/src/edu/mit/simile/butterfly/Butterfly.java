@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -37,7 +39,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.mozilla.javascript.Context;
@@ -157,7 +160,7 @@ public class Butterfly extends HttpServlet {
     transient protected ServletContext _context;
     transient protected ButterflyMounter _mounter;
 
-    protected ExtendedProperties _properties;
+    protected PropertiesConfiguration _properties;
     protected File _contextDir;
     protected File _homeDir;
     protected File _webInfDir;
@@ -189,27 +192,17 @@ public class Butterfly extends HttpServlet {
                 
         _contextDir = new File(_context.getRealPath("/"));
         _webInfDir = new File(_contextDir, "WEB-INF");
-        _properties = new ExtendedProperties();
+        _properties = new PropertiesConfiguration();
         _mounter = new ButterflyMounter();
 
         // Load the butterfly properties
         String props = System.getProperty("butterfly.properties");
         File butterflyProperties = (props == null) ? new File(_webInfDir, "butterfly.properties") : new File(props);
 
-        BufferedInputStream is = null;
-        try {
-            is = new BufferedInputStream(new FileInputStream(butterflyProperties));
-            _properties.load(is);
-        } catch (FileNotFoundException e) {
+        try (BufferedInputStream is = new BufferedInputStream(Files.newInputStream(butterflyProperties.toPath()))){
+            _properties.read(new InputStreamReader(is, StandardCharsets.UTF_8));
+        } catch (IOException|ConfigurationException e) {
             throw new ServletException("Could not find butterfly properties file",e);
-        } catch (IOException e) {
-            throw new ServletException("Could not read butterfly properties file",e);
-        } finally {
-            try {
-                is.close();
-            } catch (Exception e) {
-                // ignore
-            }
         }
 
         // Process eventual properties includes
@@ -217,27 +210,20 @@ public class Butterfly extends HttpServlet {
         if (includes != null) {
             for (String prop : includes.split(",")) {
                 File prop_file = (prop.startsWith("/")) ? new File(prop) : new File(_webInfDir, prop);
-                try {
-                    is = new BufferedInputStream(new FileInputStream(prop_file));
-                    ExtendedProperties p = new ExtendedProperties();
-                    p.load(is);
-                    _properties.combine(p);
-                } catch (Exception e) {
-                    // ignore
-                } finally {
-                    try {
-                        is.close();
-                    } catch (Exception e) {
-                        // ignore
-                    }
+                try (BufferedInputStream is = new BufferedInputStream(Files.newInputStream(prop_file.toPath()))){
+                    PropertiesConfiguration p = new PropertiesConfiguration();
+                    p.read(new InputStreamReader(is, StandardCharsets.UTF_8));
+                    _properties.append(p);
+                } catch (ConfigurationException | IOException e) {
+                    // ignore - TODO: clean this up
                 }
             }
         }
         // Overload with properties set from the command line 
         // using the -Dkey=value parameters to the JVM
         Properties systemProperties = System.getProperties();
-        for (Iterator<Object> i = systemProperties.keySet().iterator(); i.hasNext(); ) {
-            String key = (String) i.next();
+        for (Object o : systemProperties.keySet()) {
+            String key = (String) o;
             String value = systemProperties.getProperty(key);
             _properties.setProperty(key, value);
         }
@@ -318,7 +304,6 @@ public class Butterfly extends HttpServlet {
         _logger.info("done.");
     }
 
-    @SuppressWarnings("unchecked")
     public void configure() {
         _logger.debug("> configure");
 
@@ -333,8 +318,7 @@ public class Butterfly extends HttpServlet {
             }
             _logger.info("Butterfly home: {}", _homeDir);
             
-            Iterator<String> i = _properties.getKeys(ZONE);
-            while (i.hasNext()) {
+            for(Iterator<String> i = _properties.getKeys(ZONE); i.hasNext(); ) {
                 String zone = i.next();
                 String path = _properties.getString(zone);
                 zone = zone.substring(ZONE.length() + 1);
@@ -380,7 +364,7 @@ public class Butterfly extends HttpServlet {
 
         _logger.info("> load modules");
         // load modules from the properties found in the butterfly.properties
-        List<String> paths = _properties.getList(MODULES_PATH);
+        List<String> paths = _properties.getList(String.class, MODULES_PATH);
         for (String path : paths) {
             findModulesIn(absolutize(_homeDir, path.trim()));
         }
@@ -401,16 +385,15 @@ public class Butterfly extends HttpServlet {
         _logger.info("< create modules");
         
         _logger.info("> load module wirings");
-        ExtendedProperties wirings = new ExtendedProperties();
-        try {
-            // Load the wiring properties
-            File moduleWirings = absolutize(_homeDir, _properties.getString("butterfly.modules.wirings","WEB-INF/modules.properties"));
-            _logger.info("Loaded module wirings from: {}", moduleWirings);
-            _classLoader.watch(moduleWirings); // reload if the module wirings change
-            FileInputStream fis = new FileInputStream(moduleWirings);
-            wirings.load(fis);
-            fis.close();
-        } catch (Exception e) {
+        PropertiesConfiguration wirings = new PropertiesConfiguration();
+
+        // Load the wiring properties
+        File moduleWirings = absolutize(_homeDir, _properties.getString("butterfly.modules.wirings","WEB-INF/modules.properties"));
+        _logger.info("Loaded module wirings from: {}", moduleWirings);
+        _classLoader.watch(moduleWirings); // reload if the module wirings change
+        try (FileInputStream fis = new FileInputStream(moduleWirings)) {
+            wirings.read(new InputStreamReader(fis, StandardCharsets.UTF_8));
+        } catch (IOException | ConfigurationException e) {
             _configurationException = new Exception("Failed to load module wirings", e);
         }
         _logger.info("< load module wirings");
@@ -473,8 +456,7 @@ public class Butterfly extends HttpServlet {
     }
     
     @Override
-    @SuppressWarnings("unchecked")
-    public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String method = request.getMethod();
         String path = request.getPathInfo();
         String urlQuery = request.getQueryString();
@@ -533,7 +515,7 @@ public class Butterfly extends HttpServlet {
     
     protected Map<String,ButterflyModule> _modulesByName = new HashMap<String,ButterflyModule>();
     protected Map<String,Map<String,ButterflyModule>> _modulesByInterface = new HashMap<String,Map<String,ButterflyModule>>();
-    protected Map<String,ExtendedProperties> _moduleProperties = new HashMap<String,ExtendedProperties>();
+    protected Map<String, PropertiesConfiguration> _moduleProperties = new HashMap<>();
     protected Map<String,Boolean> _created = new HashMap<String,Boolean>();
 
     final static private String routingCookie = "host";
@@ -580,12 +562,12 @@ public class Butterfly extends HttpServlet {
             try {
                 String name = f.getName();
 
-                ExtendedProperties p  = new ExtendedProperties();
+                PropertiesConfiguration p  = new PropertiesConfiguration();
                 File propFile = new File(modFile,"module.properties");
                 if (propFile.exists()) {
-                    _classLoader.watch(propFile); // reload if the the module properties change
-                    BufferedInputStream stream = new BufferedInputStream(new FileInputStream(propFile));
-                    p.load(stream);
+                    _classLoader.watch(propFile); // reload if the module properties change
+                    BufferedInputStream stream = new BufferedInputStream(Files.newInputStream(propFile.toPath()));
+                    p.read(new InputStreamReader(stream, StandardCharsets.UTF_8));
                     stream.close();
                 }
 
@@ -623,6 +605,7 @@ public class Butterfly extends HttpServlet {
                     } catch (AccessControlException e) {
                         // skip
                         // NOTE: this is needed for Google App Engine that doesn't like us snooping around the internal file system
+                        // TODO: Does GAE still throw this deprecated exception?
                     }
                 }
             }
@@ -637,7 +620,7 @@ public class Butterfly extends HttpServlet {
             return _modulesByName.get(name);
         }
 
-        ExtendedProperties p = _moduleProperties.get(name);
+        PropertiesConfiguration p = _moduleProperties.get(name);
         File path = new File(p.getString(PATH_PROP));
         _logger.debug("Module path: {}", path);
             
@@ -698,8 +681,7 @@ public class Butterfly extends HttpServlet {
         return m; 
     }
 
-    @SuppressWarnings("unchecked")
-	protected void wireModules(ExtendedProperties wirings) {
+    protected void wireModules(PropertiesConfiguration wirings) {
         _logger.trace("> wireModules()");
 
         _logger.info("mounting modules");
@@ -727,28 +709,24 @@ public class Butterfly extends HttpServlet {
         for (String name : _moduleProperties.keySet()) {
             _logger.trace("> Expanding properties for module: {}", name);
             ButterflyModule m = _modulesByName.get(name);
-            ExtendedProperties p = _moduleProperties.get(name);
+            PropertiesConfiguration p = _moduleProperties.get(name);
             ButterflyModule extended = m.getExtendedModule();
 
             while (extended != null) {
                 _logger.trace("> Merging properties from extended module: {}", name);
-                ExtendedProperties temp = p;
+                PropertiesConfiguration temp = p;
                 p = _moduleProperties.get(extended.getName());
-                p.combine(temp);
+                p.append(temp); // TODO: Double check that this is correct
                 _logger.trace("< Merging properties from extended module: {} -> {}", name, p);
                 extended = extended.getExtendedModule();
             }
             
             _moduleProperties.put(name,p);
             
-            List<String> implementations = p.getList(implementsProperty);
+            List<String> implementations = p.getList(String.class, implementsProperty);
             if (implementations != null) {
                 for (String i : implementations) {
-                    Map<String, ButterflyModule> map = _modulesByInterface.get(i);
-                    if (map == null) {
-                        map = new HashMap<String,ButterflyModule>();
-                        _modulesByInterface.put(i, map);
-                    }
+                    Map<String, ButterflyModule> map = _modulesByInterface.computeIfAbsent(i, k -> new HashMap<>());
                     map.put(name, m);
                     m.setImplementation(i);
                 }
@@ -758,11 +736,11 @@ public class Butterfly extends HttpServlet {
         
         for (String name : _moduleProperties.keySet()) {
             _logger.trace("> Inject dependencies in module: {}", name);
-            ExtendedProperties p = _moduleProperties.get(name);
+            PropertiesConfiguration p = _moduleProperties.get(name);
             ButterflyModule m = _modulesByName.get(name);
 
-            for (Object o : p.keySet()) {
-                String s = (String) o;
+            for (Iterator<String> keys = p.getKeys(); keys.hasNext(); ) {
+                String s = keys.next();
                 if (s.equals(dependencyPrefix)) {
                     for (Object oo : p.getList(s)) {
                         String dep = (String) oo;
@@ -813,12 +791,12 @@ public class Butterfly extends HttpServlet {
         _logger.trace("< wireModules()");
     }    
 
-    @SuppressWarnings("unchecked")
+
     protected void configureModules() {
         _logger.trace("> configureModules()");
         for (String name : _moduleProperties.keySet()) {
             _logger.trace("> Configuring module: {}", name);
-            ExtendedProperties p = _moduleProperties.get(name);
+            PropertiesConfiguration p = _moduleProperties.get(name);
             ButterflyModule m = _modulesByName.get(name);
             
             // make the system properties accessible to the modules
@@ -867,7 +845,7 @@ public class Butterfly extends HttpServlet {
                     _logger.trace("< enabling templating");
                 }
 
-                List<String> scriptables = p.getList("scriptables");
+                List<String> scriptables = p.getList(String.class, "scriptables");
                 if (scriptables.size() > 0) {
                     Context context = Context.enter();
 
@@ -900,7 +878,7 @@ public class Butterfly extends HttpServlet {
                     Context.exit();
                 }
                 
-                List<String> controllers = p.getList("controller", CONTROLLER);
+                List<String> controllers = p.getList(String.class, "controller", CONTROLLER);
                 Set<URL> controllerURLs = new HashSet<URL>(controllers.size());
                 for (String controller : controllers) {
                     URL controllerURL = m.getResource("MOD-INF/" + controller);
@@ -926,16 +904,11 @@ public class Butterfly extends HttpServlet {
                         if (initializerReader != null) initializerReader.close();
                     }
 
-                    BufferedReader controllerReader = null;
-
                     for (URL controllerURL : controllerURLs) {
-                        try{
-                            controllerReader = new BufferedReader(new InputStreamReader(controllerURL.openStream()));
+                        try (BufferedReader controllerReader = new BufferedReader(new InputStreamReader(controllerURL.openStream()))) {
                             setScript(m, controllerURL, context.compileReader(controllerReader, controllerURL.toString(), 1, null));
-                            watch(controllerURL,m);
+                            watch(controllerURL, m);
                             _logger.trace("Parsed javascript controller successfully: {}", controllerURL);
-                        } finally {
-                            if (controllerReader != null) controllerReader.close();
                         }
                     }
                     

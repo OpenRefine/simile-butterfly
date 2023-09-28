@@ -14,7 +14,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.collections.ExtendedProperties;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.mozilla.javascript.Context;
@@ -65,7 +65,7 @@ public interface ButterflyModule {
 
     public void setTemplateEngine(VelocityEngine velocity);
         
-    public void setProperties(ExtendedProperties properties);
+    public void setProperties(PropertiesConfiguration properties);
     
     public void setTimer(Timer timer);
     
@@ -77,7 +77,7 @@ public interface ButterflyModule {
     
     public String getName();
     
-    public ExtendedProperties getProperties();
+    public PropertiesConfiguration getProperties();
 
     public File getPath();
     

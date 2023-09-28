@@ -31,10 +31,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.collections.OrderedMap;
-import org.apache.commons.collections.OrderedMapIterator;
-import org.apache.commons.collections.map.ListOrderedMap;
+import org.apache.commons.collections4.OrderedMap;
+import org.apache.commons.collections4.OrderedMapIterator;
+import org.apache.commons.collections4.map.ListOrderedMap;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
@@ -79,7 +79,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     protected Set<ButterflyModule> _extendedBy = new LinkedHashSet<ButterflyModule>();
     protected Set<String> _implementations = new LinkedHashSet<String>();
     protected Map<String,ButterflyModule> _dependencies = new HashMap<String,ButterflyModule>();
-    protected ExtendedProperties _properties;
+    protected PropertiesConfiguration _properties;
     protected Map<String,ButterflyModule> _modules;
     protected VelocityEngine _templateEngine;
     protected OrderedMap _scripts = new ListOrderedMap();
@@ -172,7 +172,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
         this._templateEngine = templateEngine;
     }
         
-    public void setProperties(ExtendedProperties properties) {
+    public void setProperties(PropertiesConfiguration properties) {
         _logger.trace("{} gets loaded with properties", this);
         this._properties = properties;
     }
@@ -208,7 +208,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
         return this._path;
     }
 
-    public ExtendedProperties getProperties() {
+    public PropertiesConfiguration getProperties() {
         return this._properties;
     }
     
@@ -615,7 +615,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
             m.initScope(context, scope);
         }
         
-        OrderedMapIterator i = _scripts.orderedMapIterator();
+        OrderedMapIterator i = _scripts.mapIterator();
         while (i.hasNext()) {
             URL url = (URL) i.next();
             _logger.debug("Executing script: {}", url);
