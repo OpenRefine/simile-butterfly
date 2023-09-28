@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -41,6 +45,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.mozilla.javascript.Context;
@@ -85,7 +90,7 @@ public class Butterfly extends HttpServlet {
     final static List<String> CONTROLLER;
     
     static {
-        CONTROLLER = new ArrayList<String>();
+        CONTROLLER = new ArrayList<>();
         CONTROLLER.add("controller.js");
     }
     
@@ -119,7 +124,7 @@ public class Butterfly extends HttpServlet {
     }
     
     public static String getFullHost(HttpServletRequest request) {
-        StringBuffer prefix = new StringBuffer();
+        StringBuilder prefix = new StringBuilder();
         String protocol = request.getScheme();
         prefix.append(protocol);
         prefix.append("://");
@@ -138,7 +143,7 @@ public class Butterfly extends HttpServlet {
     }    
 
     public static boolean isGAE(ServletConfig config) {
-        return (config.getServletContext().getServerInfo().indexOf("Google App Engine") != -1);
+        return (config.getServletContext().getServerInfo().contains("Google App Engine"));
     }
     
     // ---------------------------------------------------------------
@@ -170,7 +175,7 @@ public class Butterfly extends HttpServlet {
 
     protected ContextFactory contextFactory;
     
-    class ButterflyContextFactory extends ContextFactory {
+    static class ButterflyContextFactory extends ContextFactory {
         protected void onContextCreated(Context cx) {
             cx.setOptimizationLevel(9);
             super.onContextCreated(cx);
@@ -339,17 +344,17 @@ public class Butterfly extends HttpServlet {
             String language = _properties.getString("butterfly.locale.language");
             String country =  _properties.getString("butterfly.locale.country");
             String variant =  _properties.getString("butterfly.locale.variant");
+            Locale.Builder builder = new Locale.Builder();
             if (language != null) {
-                if (country != null) {
-                    if (variant != null) {
-                        Locale.setDefault(new Locale(language, country, variant));
-                    } else {
-                        Locale.setDefault(new Locale(language, country));
-                    }
-                } else {
-                    Locale.setDefault(new Locale(language));
-                }
+                builder.setLanguage(language);
             }
+            if (country != null) {
+                builder.setRegion(country);
+            }
+            if (variant != null) {
+                builder.setVariant(variant);
+            }
+            Locale.setDefault(builder.build());
 
             String timeZone = _properties.getString("butterfly.timeZone");
             if (timeZone != null) {
@@ -415,8 +420,8 @@ public class Butterfly extends HttpServlet {
         _logger.info("< configure modules");
                 
         _logger.info("> initialize modules");
-        Set<String> initialized = new HashSet<String>();
-        Set<String> initializing = new HashSet<String>();
+        Set<String> initialized = new HashSet<>();
+        Set<String> initializing = new HashSet<>();
         for (String name : _modulesByName.keySet()) {
             initializeModule(name, initialized, initializing);
         }
@@ -473,7 +478,7 @@ public class Butterfly extends HttpServlet {
                 }
             } else if (_logger.isInfoEnabled()) {
                 String zoneName = (zone != null) ? zone.getName() : "";
-                _logger.info("{} {} [{}]", new String[] { method,path,zoneName });
+                _logger.info("{} {} [{}]", method, path, zoneName );
             }
     
             setRoutingCookie(request, response);
@@ -513,10 +518,9 @@ public class Butterfly extends HttpServlet {
     final static private String implementsProperty = "implements";
     final static private String extendsProperty = "extends";
     
-    protected Map<String,ButterflyModule> _modulesByName = new HashMap<String,ButterflyModule>();
-    protected Map<String,Map<String,ButterflyModule>> _modulesByInterface = new HashMap<String,Map<String,ButterflyModule>>();
+    protected Map<String, ButterflyModule> _modulesByName = new HashMap<>();
+    protected Map<String, Map<String,ButterflyModule>> _modulesByInterface = new HashMap<>();
     protected Map<String, PropertiesConfiguration> _moduleProperties = new HashMap<>();
-    protected Map<String,Boolean> _created = new HashMap<String,Boolean>();
 
     final static private String routingCookie = "host";
     
@@ -541,9 +545,9 @@ public class Butterfly extends HttpServlet {
     }
     
     protected File absolutize(File base, String location) {
-        if (location == null || location.length() == 0) { // we got an empty location
+        if (StringUtils.isEmpty(location)) { // we got an empty location
             return base;
-        } else if (location.indexOf(':') > 0) { // we got an absolute windows location (ie c:\blah)
+        } else if (location.contains(":")) { // we got an absolute windows location (ie c:\blah)
             return new File(location);
         } else if (location.charAt(0) == '/' || location.charAt(0) == '\\') { // we got an absolute location
             return new File(location);
@@ -566,9 +570,9 @@ public class Butterfly extends HttpServlet {
                 File propFile = new File(modFile,"module.properties");
                 if (propFile.exists()) {
                     _classLoader.watch(propFile); // reload if the module properties change
-                    BufferedInputStream stream = new BufferedInputStream(Files.newInputStream(propFile.toPath()));
-                    p.read(new InputStreamReader(stream, StandardCharsets.UTF_8));
-                    stream.close();
+                    try (BufferedInputStream stream = new BufferedInputStream(Files.newInputStream(propFile.toPath()))) {
+                        p.read(new InputStreamReader(stream, StandardCharsets.UTF_8));
+                    }
                 }
 
                 p.addProperty(PATH_PROP, f.getAbsolutePath());
@@ -596,8 +600,7 @@ public class Butterfly extends HttpServlet {
         } else {
             File[] files = f.listFiles();
             if (files != null) {
-                for (int i = 0; i < files.length; i++) {
-                    File file = files[i];
+                for (File file : files) {
                     try {
                         if (file.isDirectory()) {
                             findModulesIn(file);
@@ -641,8 +644,9 @@ public class Butterfly extends HttpServlet {
         if (manager != null && !manager.equals(m.getClass().getName())) {
             try {
                 Class<?> c = _classLoader.loadClass(manager);
-                m = (ButterflyModule) c.newInstance();
-            } catch (Exception e) {
+                m = (ButterflyModule) c.getDeclaredConstructor().newInstance();
+            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
+                     IllegalAccessException | NoSuchMethodException e) {
                 _logger.error("Error loading special module manager", e);
             }
         }
@@ -809,9 +813,9 @@ public class Butterfly extends HttpServlet {
                     Properties properties = new Properties();
                     File velocityProperties = new File(_webInfDir, "velocity.properties");
                     _classLoader.watch(velocityProperties); // reload if the velocity properties change
-                    FileInputStream fis = new FileInputStream(velocityProperties);
-                    properties.load(fis);
-                    fis.close();
+                    try (FileInputStream fis = new FileInputStream(velocityProperties)) {
+                        properties.load(fis);
+                    }
         
                     // set properties for resource loading
                     properties.setProperty("resource.loaders", "butterfly");
@@ -846,31 +850,27 @@ public class Butterfly extends HttpServlet {
                 }
 
                 List<String> scriptables = p.getList(String.class, "scriptables");
-                if (scriptables.size() > 0) {
+                if (!scriptables.isEmpty()) {
                     Context context = Context.enter();
 
-                    BufferedReader initializerReader = null;
-
                     for (String scriptable : scriptables) {
-                        if (!scriptable.equals("")) {
+                        if (!scriptable.isEmpty()) {
                             try {
                                 _logger.trace("> adding scriptable object: {}", scriptable);
-                                @SuppressWarnings("rawtypes")
-                                Class c  = _classLoader.loadClass(scriptable);
-                                ButterflyScriptableObject o = (ButterflyScriptableObject) c.newInstance();
+                                Class<ButterflyScriptableObject> c  = (Class<ButterflyScriptableObject>) _classLoader.loadClass(scriptable);
+                                ButterflyScriptableObject o = c.getDeclaredConstructor().newInstance();
                                 setScriptable(m, o);
                                 URL initializer = c.getResource("init.js");
                                 if (initializer != null) {
-                                    initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()));
-                                    setScript(m, initializer, context.compileReader(initializerReader, "init.js", 1, null));
+                                    try(BufferedReader initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()))) {
+                                        setScript(m, initializer, context.compileReader(initializerReader, "init.js", 1, null));
+                                    }
                                     _scriptWatcher.watch(initializer,m);
                                     _logger.trace("Parsed scriptable javascript initializer successfully");
                                 }
                                 _logger.trace("< adding scriptable object: {}", scriptable);
-                            } catch (Exception e) {
+                            } catch (IOException e) {
                                 _logger.trace("Error initializing scriptable object '{}': {}", scriptable, e);
-                            } finally {
-                                if (initializerReader != null) initializerReader.close();
                             }
                         }
                     }
@@ -879,32 +879,34 @@ public class Butterfly extends HttpServlet {
                 }
                 
                 List<String> controllers = p.getList(String.class, "controller", CONTROLLER);
-                Set<URL> controllerURLs = new HashSet<URL>(controllers.size());
+                Set<URI> controllerURIs = new HashSet<>(controllers.size());
                 for (String controller : controllers) {
                     URL controllerURL = m.getResource("MOD-INF/" + controller);
                     if (controllerURL != null) {
-                        controllerURLs.add(controllerURL);
+                        controllerURIs.add(controllerURL.toURI());
                     }
                 }
                 
-                if (controllerURLs.size() > 0) {
+                if (!controllerURIs.isEmpty()) {
                     _logger.trace("> enabling javascript control");
                     
                     Context context = Context.enter();
 
-                    BufferedReader initializerReader = null;
-
                     try {
                         URL initializer = this.getClass().getClassLoader().getResource("edu/mit/simile/butterfly/Butterfly.js");
-                        initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()));
-                        setScript(m, initializer, context.compileReader(initializerReader, "Butterfly.js", 1, null));
-                        watch(initializer,m);
-                        _logger.trace("Parsed javascript initializer successfully");
-                    } finally {
-                        if (initializerReader != null) initializerReader.close();
+                        if (initializer != null) {
+                            try (BufferedReader initializerReader = new BufferedReader(new InputStreamReader(initializer.openStream()))) {
+                                setScript(m, initializer, context.compileReader(initializerReader, "Butterfly.js", 1, null));
+                                watch(initializer, m);
+                                _logger.trace("Parsed javascript initializer successfully");
+                            }
+                        }
+                    } catch (IOException e) {
+                        _logger.error("Failed to load Butterfly.js initializer script", e);
                     }
 
-                    for (URL controllerURL : controllerURLs) {
+                    for (URI controllerURI : controllerURIs) {
+                        URL controllerURL = controllerURI.toURL();
                         try (BufferedReader controllerReader = new BufferedReader(new InputStreamReader(controllerURL.openStream()))) {
                             setScript(m, controllerURL, context.compileReader(controllerReader, controllerURL.toString(), 1, null));
                             watch(controllerURL, m);
@@ -940,7 +942,7 @@ public class Butterfly extends HttpServlet {
         }
     }
     
-    protected void watch(URL script, ButterflyModule module) throws IOException {
+    protected void watch(URL script, ButterflyModule module) throws IOException, URISyntaxException {
         if (_scriptWatcher != null) {
             _scriptWatcher.watch(script, module);
         }
@@ -963,23 +965,23 @@ public class Butterfly extends HttpServlet {
     protected void delay(HttpServletResponse response, String title) throws IOException {
         response.setContentType("text/html");
         response.setCharacterEncoding("UTF-8");
-        PrintWriter writer = response.getWriter();
-        writer.println(header);
-        writer.println("<h1>" + title + "</h1>");
-        writer.println("<script>setTimeout(function() { window.location = '.' }, 3000);</script>");
-        writer.println(footer);
-        writer.close();
+        try (PrintWriter writer = response.getWriter()) {
+            writer.println(header);
+            writer.println("<h1>" + title + "</h1>");
+            writer.println("<script>setTimeout(function() { window.location = '.' }, 3000);</script>");
+            writer.println(footer);
+        }
     }
     
     protected void error(HttpServletResponse response, String title, String msg, Exception e) throws IOException {
         StringWriter stringWriter = new StringWriter();
-        PrintWriter writer = new PrintWriter(stringWriter);
-        writer.println(title);
-        writer.println(msg);
-        if (e != null) {
-            e.printStackTrace(writer);
+        try (PrintWriter writer = new PrintWriter(stringWriter)) {
+            writer.println(title);
+            writer.println(msg);
+            if (e != null) {
+                e.printStackTrace(writer);
+            }
         }
-        writer.close();
         response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stringWriter.toString());
     }
     
@@ -1003,7 +1005,7 @@ public class Butterfly extends HttpServlet {
 
         final static private Logger _logger = LoggerFactory.getLogger("butterfly.trigger");
 
-        private List<File> tries = new ArrayList<File>();
+        private List<File> tries = new ArrayList<>();
         
         Trigger(File context) {
             File web_inf = new File(context, "WEB-INF");
@@ -1031,7 +1033,7 @@ public class Butterfly extends HttpServlet {
         }
         
         private File findFile(File start, String extension) {
-            for (File f : start.listFiles()) {
+            for (File f : Objects.requireNonNull(start.listFiles())) {
                 if (f.isDirectory()) {
                     return findFile(f, extension);
                 } else {
@@ -1049,41 +1051,38 @@ class ButterflyScriptWatcher extends TimerTask {
 
     final static private Logger _logger = LoggerFactory.getLogger("butterfly.script_watcher");
     
-    private Map<URL,ButterflyModule> scripts = new HashMap<URL,ButterflyModule>();
-    private Map<URL,Long> lastModifieds = new HashMap<URL,Long>();
+    private final Map<URI, ButterflyModule> scripts = new HashMap<>();
+    private final Map<URI, Long> lastModifieds = new HashMap<>();
             
-    protected void watch(URL script, ButterflyModule module) throws IOException  {
+    protected void watch(URL script, ButterflyModule module) throws IOException, URISyntaxException {
         _logger.debug("Watching {}", script);
-        this.lastModifieds.put(script, script.openConnection().getLastModified());
-        this.scripts.put(script, module);
+        this.lastModifieds.put(script.toURI(), script.openConnection().getLastModified());
+        this.scripts.put(script.toURI(), module);
     }
     
     public void run() {
         try {
             // Make a copy of the set to protect against changes
-            List<URL> urls = new ArrayList<URL>(this.scripts.keySet());
-            for (URL url : urls) {
-                URLConnection connection = url.openConnection();
+            List<URI> uris = new ArrayList<>(this.scripts.keySet());
+            for (URI uri : uris) {
+                URLConnection connection = uri.toURL().openConnection();
                 long lastModified = connection.getLastModified(); 
-                if (lastModified > this.lastModifieds.get(url)) {
-                    _logger.debug("{} has changed, reparsing...", url);
-                    this.lastModifieds.put(url, lastModified);
-                    ButterflyModule module = this.scripts.get(url);
-                    BufferedReader reader = null;
-                    try {
-                        Context context = Context.enter();
-                        reader = new BufferedReader(new InputStreamReader(url.openStream()));
-                        Butterfly.setScript(module, url, context.compileReader(reader, url.getFile(), 1, null));
-                        _logger.info("{} reloaded", url);
-                        Context.exit();
-                    } finally {
-                        if (reader != null) reader.close();
+                if (lastModified > this.lastModifieds.get(uri)) {
+                    _logger.debug("{} has changed, reparsing...", uri);
+                    this.lastModifieds.put(uri, lastModified);
+                    ButterflyModule module = this.scripts.get(uri);
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(uri.toURL().openStream()));
+                         Context context = Context.enter()){
+
+                        Butterfly.setScript(module, uri.toURL(), context.compileReader(reader, uri.toURL().getFile(), 1, null));
+                        _logger.info("{} reloaded", uri);
                     }
                 }
+                // TODO: Is the below obsolete superstition?
                 connection.getInputStream().close(); // NOTE(SM): this avoids leaking file descriptions in some JVMs
             }
-        } catch (Exception e) {
-            _logger.error("", e);
+        } catch (IOException e) {
+            _logger.error("Fatal error in run() method", e);
         }
     }
 }
