@@ -3,7 +3,7 @@ package edu.mit.simile.butterfly.tests;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.testng.annotations.BeforeSuite;

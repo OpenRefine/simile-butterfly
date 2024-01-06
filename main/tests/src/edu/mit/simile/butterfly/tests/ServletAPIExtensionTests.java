@@ -1,6 +1,6 @@
 package edu.mit.simile.butterfly.tests;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
