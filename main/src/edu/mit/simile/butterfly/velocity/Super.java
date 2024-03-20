@@ -1,6 +1,5 @@
 package edu.mit.simile.butterfly.velocity;
 
-import java.io.IOException;
 import java.io.Writer;
 
 import org.slf4j.Logger;
@@ -36,13 +35,8 @@ public class Super extends InputBase {
 
     @Override
     public boolean render(InternalContextAdapter context, Writer writer, Node node) 
-    throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-        
-        // avoid rendering if no longer allowed (after a stop)
-        if (!context.getAllowRendering()) {
-            return true;
-        }
-        
+    throws ResourceNotFoundException, ParseErrorException, MethodInvocationException {
+
         String template = context.getCurrentTemplateName();
         _logger.debug("Injecting parent of {}", template);
 

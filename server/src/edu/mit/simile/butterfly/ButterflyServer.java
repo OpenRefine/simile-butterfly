@@ -34,6 +34,7 @@ public class ButterflyServer {
         
         // tell jetty to use SLF4J for logging instead of its own stuff
         System.setProperty("VERBOSE","false");
+        // FIXME: SLF4J is the default now, so this can probably be removed
         System.setProperty("org.eclipse.jetty.util.log.class","org.eclipse.jetty.util.log.Slf4jLog");
         
         port = Configurations.getInteger("server.port",DEFAULT_PORT);
@@ -347,4 +348,3 @@ class ThreadPoolExecutorAdapter implements ThreadPool, LifeCycle {
         System.err.println("we should implement this!");
     }
 }
-    
