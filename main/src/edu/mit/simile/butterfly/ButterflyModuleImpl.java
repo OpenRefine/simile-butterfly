@@ -14,6 +14,7 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -71,6 +72,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     protected Timer _timer;
     protected ServletConfig _config;
     protected File _path;
+    protected Path _normalizedPath;
     protected MountPoint _mountPoint;
     protected ButterflyMounter _mounter;
     protected String _name;
@@ -118,6 +120,7 @@ public class ButterflyModuleImpl implements ButterflyModule {
     public void setPath(File path) {
         _logger.trace("{} -(path)-> {}", this, path);
         this._path = path;
+        this._normalizedPath = path.toPath().toAbsolutePath().normalize();
     }
 
     public void setName(String name) {
@@ -259,6 +262,8 @@ public class ButterflyModuleImpl implements ButterflyModule {
 
     protected Pattern super_pattern = Pattern.compile("^@@(.*)@@$");
     
+    // TODO 2025-10: migrate away from URL as a return type to File/Path as we don't want this to fetch anything remote
+    @Override
     public URL getResource(String resource) {
         _logger.trace("> getResource({}->{},{})", new Object[] { _name, _extended, resource });
         URL u = null;
@@ -283,14 +288,11 @@ public class ButterflyModuleImpl implements ButterflyModule {
         
         if (u == null) {
             try {
-                if (resource.startsWith("file:/")) {
-                    u = new URL(resource);
-                } else {
-                    if (resource.charAt(0) == '/') resource = resource.substring(1);
-                    File f = new File(_path, resource);
-                    if (f.exists()) {
-                        u = f.toURI().toURL();
-                    }
+                if (resource.charAt(0) == '/') resource = resource.substring(1);
+                File f = new File(_path, resource);
+                // check that the file does not escape the expected directory
+                if (f.toPath().toAbsolutePath().normalize().startsWith(_normalizedPath) && f.exists()) {
+                    u = f.toURI().toURL();
                 }
             } catch (MalformedURLException e) {
                 _logger.error("Error", e);
