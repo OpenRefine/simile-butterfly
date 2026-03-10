@@ -1,2 +1,6 @@
 server/classes
 main/target
+target
+/.idea/
+/.settings/
+/main/.settings/
