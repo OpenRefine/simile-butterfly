@@ -843,21 +843,22 @@ public class Butterfly extends HttpServlet {
                     properties.setProperty("butterfly.resource.loader.description", "Butterfly Resource Loader");
                         
                     // set properties for macros
-                    properties.setProperty("velocimacro.library", p.getString("templating.macros", ""));
+                    properties.setProperty("velocimacro.library.path", p.getString("templating.macros", ""));
         
                     // Set our special parent injection directive
-                    properties.setProperty("userdirective", Super.class.getName());
+                    properties.setProperty("runtime.custom_directives", Super.class.getName());
         
                     // Set logging properties
                     if (_appengine) {
-                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.JdkLogChute");
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_NAME, "org.apache.velocity.runtime.log.JdkLogChute");
                     } else {
-                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
+                        properties.setProperty(RuntimeConstants.RUNTIME_LOG_NAME, "org.apache.velocity.runtime.log.Log4JLogChute");
                         properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
                     }
 
                     // create a module-specific velocity engine
                     VelocityEngine velocity = new VelocityEngine();
+                    velocity.setProperties(properties);
                     velocity.setApplicationAttribute("module", m); // this is how we pass the module to the resource loader
                     velocity.init(properties);
                     

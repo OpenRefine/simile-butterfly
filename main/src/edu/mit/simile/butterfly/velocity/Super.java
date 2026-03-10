@@ -36,13 +36,8 @@ public class Super extends InputBase {
 
     @Override
     public boolean render(InternalContextAdapter context, Writer writer, Node node) 
-    throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-        
-        // avoid rendering if no longer allowed (after a stop)
-        if (!context.getAllowRendering()) {
-            return true;
-        }
-        
+    throws ResourceNotFoundException, ParseErrorException, MethodInvocationException {
+
         String template = context.getCurrentTemplateName();
         _logger.debug("Injecting parent of {}", template);
 
@@ -58,11 +53,11 @@ public class Super extends InputBase {
         Object[] templateStack = context.getTemplateNameStack();
 
         if (templateStack.length >= rsvc.getInt(RuntimeConstants.PARSE_DIRECTIVE_MAXDEPTH, 20)) {
-            StringBuffer path = new StringBuffer();
+            StringBuilder path = new StringBuilder();
 
-            for (int i = 0; i < templateStack.length; ++i) {
+            for (Object o : templateStack) {
                 path.append(" > ");
-                path.append(templateStack[i]);
+                path.append(o);
             }
 
             _logger.error("Max recursion depth reached (" + templateStack.length + ")" + " File stack:" + path);
