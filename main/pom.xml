@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -9,10 +9,8 @@
     <artifactId>butterfly-container</artifactId>
     <version>1.2.7-SNAPSHOT</version>
   </parent>
-  
-  <groupId>org.openrefine.dependencies</groupId>
+
   <artifactId>butterfly</artifactId>
-  <version>1.2.7-SNAPSHOT</version>
 
   <name>SIMILE Butterfly Engine</name>
   <url>https://github.com/OpenRefine/simile-butterfly/</url>
@@ -111,9 +109,10 @@
       <version>1.9.1</version>
     </dependency>
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>4.0.1</version>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>5.0.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
