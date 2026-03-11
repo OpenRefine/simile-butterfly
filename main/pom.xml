@@ -85,7 +85,12 @@
     <dependency>
       <groupId>org.mozilla</groupId>
       <artifactId>rhino</artifactId>
-      <version>1.7.15.1</version>
+      <version>1.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino-tools</artifactId>
+      <version>1.9.1</version>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
