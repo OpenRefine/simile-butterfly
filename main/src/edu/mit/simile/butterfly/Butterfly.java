@@ -11,9 +11,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -198,7 +197,7 @@ public class Butterfly extends HttpServlet {
 
         BufferedInputStream is = null;
         try {
-            is = new BufferedInputStream(new FileInputStream(butterflyProperties)); 
+            is = new BufferedInputStream(new FileInputStream(butterflyProperties));
             _properties.load(is);
         } catch (FileNotFoundException e) {
             throw new ServletException("Could not find butterfly properties file",e);
@@ -223,7 +222,7 @@ public class Butterfly extends HttpServlet {
                     p.load(is);
                     _properties.combine(p);
                 } catch (Exception e) {
-                    // ignore 
+                    // ignore
                 } finally {
                     try {
                         is.close();
@@ -260,14 +259,8 @@ public class Butterfly extends HttpServlet {
         
         _logger.debug("> initialize classloader");
         try {
-            _classLoader = AccessController.doPrivileged (
-                new PrivilegedAction<ButterflyClassLoader>() {
-                    public ButterflyClassLoader run() {
-                        return new ButterflyClassLoader(this.getClass().getClassLoader());
-                    }
-                }
-            );
-            
+            _classLoader = new ButterflyClassLoader(this.getClass().getClassLoader());
+
             Thread.currentThread().setContextClassLoader(_classLoader);
             _classLoader.watch(butterflyProperties); // reload if the butterfly properties change
             contextFactory = new ButterflyContextFactory();
@@ -614,15 +607,9 @@ public class Butterfly extends HttpServlet {
         } else {
             File[] files = f.listFiles();
             if (files != null) {
-                for (int i = 0; i < files.length; i++) {
-                    File file = files[i];
-                    try {
-                        if (file.isDirectory()) {
-                            findModulesIn(file);
-                        }
-                    } catch (AccessControlException e) {
-                        // skip
-                        // NOTE: this is needed for Google App Engine that doesn't like us snooping around the internal file system
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        findModulesIn(file);
                     }
                 }
             }
@@ -738,9 +725,9 @@ public class Butterfly extends HttpServlet {
                 _logger.trace("< Merging properties from extended module: {} -> {}", name, p);
                 extended = extended.getExtendedModule();
             }
-            
+
             _moduleProperties.put(name,p);
-            
+
             List<String> implementations = p.getList(implementsProperty);
             if (implementations != null) {
                 for (String i : implementations) {
@@ -812,7 +799,7 @@ public class Butterfly extends HttpServlet {
         
         _logger.trace("< wireModules()");
     }    
-        
+
     @SuppressWarnings("unchecked")
     protected void configureModules() {
         _logger.trace("> configureModules()");
